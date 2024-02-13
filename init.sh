@@ -38,13 +38,13 @@ sleep 30
 mongosh <<EOF
 admin = db.getSiblingDB("admin")
 admin.createUser({
-user: "admin",
-pwd: "admin",
+user: "${user}",
+pwd: "${pass}",
 roles: [ { role: "root", db: "admin" } ]
 })
 EOF
 sleep 5
-mongosh --host mongo1:27017 -u admin -p admin <<EOF
+mongosh --host mongo1:27017 -u ${user} -p ${pass} <<EOF
 rs.conf()
 config = rs.conf()
 config.members.pop()
