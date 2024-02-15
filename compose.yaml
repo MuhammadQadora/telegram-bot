@@ -61,12 +61,14 @@ services:
       - ./init.sh:/init.sh
       - ./key:/key
     environment:
-      user: ${login}
-      pass: ${login}
+      user: ${user}
+      pass: ${pass}
     depends_on:
       - mongo1
       - mongo2
     command: ["bash","-c","/init.sh"]
+    secrets:
+      - mysecret
   
   mongo-express:
     image: mongo-express
@@ -78,10 +80,15 @@ services:
     networks:
       - cluster
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${login}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${login}
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${user}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${pass}
       ME_CONFIG_MONGODB_SERVER: "mongo1,mongo2,mongo3"
+    secrets:
+      - mysecret
 
+secrets:
+  mysecret:
+    file: .env
 networks:
   cluster:
 
