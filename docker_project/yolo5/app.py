@@ -6,7 +6,7 @@ import uuid
 import yaml
 from loguru import logger
 import os
-
+import boto3
 images_bucket = os.environ['BUCKET_NAME']
 
 with open("data/coco128.yaml", "r") as stream:
@@ -14,7 +14,7 @@ with open("data/coco128.yaml", "r") as stream:
 
 app = Flask(__name__)
 
-@app.route('/predict', methods=['POST'])
+@app.route('/predict', methods=['POST','GET'])
 def predict():
     # Generates a UUID for this current prediction HTTP request. This id can be used as a reference in logs to identify and track individual prediction requests.
     prediction_id = str(uuid.uuid4())
@@ -25,6 +25,14 @@ def predict():
     img_name = request.args.get('imgName')
 
     # TODO download img_name from S3, store the local image path in original_img_path
+    client = boto3.client('s3')
+    response = client.get_object(
+    Bucket=images_bucket,
+    Key=img_name
+    )
+    binary_image = response['Body']
+    opend = Image.open(binary_image)
+    opend.save("iron.jpeg")
     #  The bucket name should be provided as an env var BUCKET_NAME.
     original_img_path = ...
 

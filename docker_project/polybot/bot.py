@@ -42,7 +42,7 @@ class Bot:
         file_info = self.telegram_bot_client.get_file(msg['photo'][-1]['file_id'])
         data = self.telegram_bot_client.download_file(file_info.file_path)
         folder_name = file_info.file_path.split('/')[0]
-
+        
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
 
@@ -78,9 +78,14 @@ class ObjectDetectionBot(Bot):
     def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
 
-        if self.is_current_msg_photo(msg):
-            pass
+        if not self.is_current_msg_photo(msg):
+            raise RuntimeError(f'Message content of type \'photo\' expected')
+
+        # if self.is_current_msg_photo(msg):
+        #     print("hello")
+        # else:
+        #     return "nooo"
             # TODO download the user photo (utilize download_user_photo)
             # TODO upload the photo to S3
-            # TODO send a request to the `yolo5` service for prediction
+            # TODO send a request to the `yolo5` service for prediction localhost:8081/predict?imgName=nfb
             # TODO send results to the Telegram end-user

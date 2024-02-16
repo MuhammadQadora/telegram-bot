@@ -1,6 +1,8 @@
 import flask
 from flask import request
 import os
+
+from loguru import logger
 from bot import ObjectDetectionBot, Bot
 
 app = flask.Flask(__name__)
@@ -20,8 +22,6 @@ def webhook():
     bot.handle_message(req['message'])
     return 'Ok'
 
-
 if __name__ == "__main__":
     bot = Bot(TELEGRAM_TOKEN, TELEGRAM_APP_URL)
-
     app.run(host='0.0.0.0', port=8443)
