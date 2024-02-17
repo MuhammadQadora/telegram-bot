@@ -89,7 +89,7 @@ services:
   yolov5:
     depends_on:
       - setup
-    image: muhammadqadora/yolov5:1.1
+    image: muhammadqadora/yolov5:1.2
     container_name: yolov5
     hostname: yolov5
     networks:
@@ -103,12 +103,6 @@ services:
       CONNECTION_STRING: ${connection_string}
     secrets:
       - mysecret
-  busybox:
-    image: busybox
-    container_name: busybox
-    tty: true
-    networks:
-      - cluster
 
 secrets:
   mysecret:
