@@ -57,7 +57,6 @@ services:
     networks:
       - cluster
     volumes:
-      - ./script.sh:/script.sh
       - ./init.sh:/init.sh
       - ./key:/key
     environment:
@@ -66,6 +65,7 @@ services:
     depends_on:
       - mongo1
       - mongo2
+      - mongo3
     command: ["bash","-c","/init.sh"]
     secrets:
       - mysecret
@@ -85,6 +85,30 @@ services:
       ME_CONFIG_MONGODB_SERVER: "mongo1,mongo2,mongo3"
     secrets:
       - mysecret
+
+  yolov5:
+    depends_on:
+      - setup
+    image: muhammadqadora/yolov5:1.1
+    container_name: yolov5
+    hostname: yolov5
+    networks:
+      - cluster
+    volumes:
+      - "/c/Users/moham/.aws:/.aws"
+    environment:
+      BUCKET_NAME: ${bucket_name}
+      MONGO_USER: ${user}
+      MONGO_PASS: ${pass}
+      CONNECTION_STRING: ${connection_string}
+    secrets:
+      - mysecret
+  busybox:
+    image: busybox
+    container_name: busybox
+    tty: true
+    networks:
+      - cluster
 
 secrets:
   mysecret:
