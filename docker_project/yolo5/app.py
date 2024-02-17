@@ -1,3 +1,4 @@
+import json
 import time
 from pathlib import Path
 from flask import Flask, request
@@ -7,11 +8,18 @@ import yaml
 from loguru import logger
 import os
 import boto3
+from botocore.exceptions import ClientError
+from mongoApi import mongoAPI
+from bson import json_util
+
 images_bucket = os.environ['BUCKET_NAME']
+mongo_user = os.environ['MONGO_USER']
+mongo_pass = os.environ['MONGO_PASS']
+database = 'images'
+collection = 'predictions'
 
-with open("data/coco128.yaml", "r") as stream:
+with open("data/coco128.yaml", "rb") as stream:
     names = yaml.safe_load(stream)['names']
-
 app = Flask(__name__)
 
 @app.route('/predict', methods=['POST','GET'])
@@ -20,21 +28,22 @@ def predict():
     prediction_id = str(uuid.uuid4())
 
     logger.info(f'prediction: {prediction_id}. start processing')
-
     # Receives a URL parameter representing the image to download from S3
     img_name = request.args.get('imgName')
-
     # TODO download img_name from S3, store the local image path in original_img_path
     client = boto3.client('s3')
-    response = client.get_object(
-    Bucket=images_bucket,
-    Key=img_name
-    )
-    binary_image = response['Body']
-    opend = Image.open(binary_image)
-    opend.save("iron.jpeg")
-    #  The bucket name should be provided as an env var BUCKET_NAME.
-    original_img_path = ...
+
+    #create directory if it does not exist
+    if not os.path.exists('Images'):
+        os.mkdir('Images')
+    #download image to Images folder
+    try:
+        client.download_file(images_bucket,img_name, f'Images/{img_name}')
+    except ClientError as e:
+        logger.info(e)
+        return False
+
+    original_img_path = f"Images/{img_name}"
 
     logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
 
@@ -52,12 +61,17 @@ def predict():
 
     # This is the path for the predicted image with labels
     # The predicted image typically includes bounding boxes drawn around the detected objects, along with class labels and possibly confidence scores.
-    predicted_img_path = Path(f'static/data/{prediction_id}/{original_img_path}')
-
+    ## had to change the predicted img path
+    predicted_img_path = Path(f'static/data/{prediction_id}/{original_img_path.split('/')[-1]}')
     # TODO Uploads the predicted image (predicted_img_path) to S3 (be careful not to override the original image).
-
+    # This will upload the predicted images with same file structure found locally
+    try:
+        client.upload_file(predicted_img_path,images_bucket,f"static/{prediction_id}/{os.path.basename(predicted_img_path)}")
+    except ClientError as e:
+        logger.info(e)
+        return False
     # Parse prediction labels and create a summary
-    pred_summary_path = Path(f'static/data/{prediction_id}/labels/{original_img_path.split(".")[0]}.txt')
+    pred_summary_path = Path(f'static/data/{prediction_id}/labels/{img_name.split('.')[0]}.txt')
     if pred_summary_path.exists():
         with open(pred_summary_path) as f:
             labels = f.read().splitlines()
@@ -75,12 +89,15 @@ def predict():
         prediction_summary = {
             'prediction_id': prediction_id,
             'original_img_path': original_img_path,
-            'predicted_img_path': predicted_img_path,
+            'predicted_img_path': f"{predicted_img_path}",
             'labels': labels,
             'time': time.time()
         }
 
         # TODO store the prediction_summary in MongoDB
+        data = json.loads(json_util.dumps(prediction_summary))
+        conn = mongoAPI(mongo_user,mongo_pass,database,collection)
+        conn.insert_prediction(data)
 
         return prediction_summary
     else:
