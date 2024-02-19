@@ -1,8 +1,16 @@
+import json
+
 import telebot
 from loguru import logger
 import os
 import time
 from telebot.types import InputFile
+import boto3
+from botocore.exceptions import ClientError
+import requests
+
+url = os.environ['YOLO_URL']
+images_bucket = os.environ['BUCKET_NAME']
 
 
 class Bot:
@@ -73,19 +81,47 @@ class QuoteBot(Bot):
         if msg["text"] != 'Please don\'t quote me':
             self.send_text_with_quote(msg['chat']['id'], msg["text"], quoted_msg_id=msg["message_id"])
 
-
+class Util:
+    def __init__(self, json_data):
+        self.json_data = json_data
+    def object_count(self):
+        total_items = len(self.json_data['labels'])
+        print(f"There are {total_items} items in the JSON")
+        class_count = {}
+        for item in self.json_data['labels']:
+            class_name = item["class"]
+            if class_name in class_count:
+                class_count[class_name] += 1
+            else:
+                class_count[class_name] = 1
+        if len(class_count) == 0:
+            return "Zero objects Detected :("
+        else:
+            result = 'Detected Objects:\n'
+            for key,val in class_count.items():
+                result += f"{key}: {val}\n"
+            return result
 class ObjectDetectionBot(Bot):
     def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
 
-        if not self.is_current_msg_photo(msg):
-            raise RuntimeError(f'Message content of type \'photo\' expected')
-
-        # if self.is_current_msg_photo(msg):
-        #     print("hello")
-        # else:
-        #     return "nooo"
+        if self.is_current_msg_photo(msg):
             # TODO download the user photo (utilize download_user_photo)
+            file_path = self.download_user_photo(msg)
+            print(file_path)
             # TODO upload the photo to S3
+            client = boto3.client('s3')
+            try:
+                client.upload_file(file_path, images_bucket,f"bot/received/{os.path.basename(file_path)}")
+                print("uploaded")
+            except ClientError as e:
+                logger.info(e)
+                return False
             # TODO send a request to the `yolo5` service for prediction localhost:8081/predict?imgName=nfb
+            response = requests.post(f"{url}/predict?imgName=bot/received/{os.path.basename(file_path)}")
             # TODO send results to the Telegram end-user
+            if response.ok:
+                data = response.json()
+                utility = Util(data)
+                processed_data = utility.object_count()
+                self.send_text(msg['chat']['id'], f"{processed_data}")

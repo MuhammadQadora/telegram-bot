@@ -1,7 +1,7 @@
 import json
 import time
 from pathlib import Path
-from flask import Flask, request
+from flask import Flask, request,make_response
 from detect import run
 import uuid
 import yaml
@@ -32,18 +32,17 @@ def predict():
     img_name = request.args.get('imgName')
     # TODO download img_name from S3, store the local image path in original_img_path
     client = boto3.client('s3')
-
     #create directory if it does not exist
     if not os.path.exists('Images'):
         os.mkdir('Images')
     #download image to Images folder
     try:
-        client.download_file(images_bucket,img_name, f'Images/{img_name}')
+        client.download_file(images_bucket, img_name, f"Images/{os.path.basename(img_name)}")
     except ClientError as e:
         logger.info(e)
         return False
-
-    original_img_path = f"Images/{img_name}"
+    print("passed")
+    original_img_path = f"Images/{os.path.basename(img_name)}"
 
     logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
 
@@ -62,7 +61,7 @@ def predict():
     # This is the path for the predicted image with labels
     # The predicted image typically includes bounding boxes drawn around the detected objects, along with class labels and possibly confidence scores.
     ## had to change the predicted img path
-    predicted_img_path = Path(f"static/data/{prediction_id}/{original_img_path.split('/')[-1]}")
+    predicted_img_path = Path(f'static/data/{prediction_id}/{original_img_path.split('/')[-1]}')
     # TODO Uploads the predicted image (predicted_img_path) to S3 (be careful not to override the original image).
     # This will upload the predicted images with same file structure found locally
     try:
@@ -71,7 +70,7 @@ def predict():
         logger.info(e)
         return False
     # Parse prediction labels and create a summary
-    pred_summary_path = Path(f"static/data/{prediction_id}/labels/{img_name.split('.')[0]}.txt")
+    pred_summary_path = Path(f'static/data/{prediction_id}/labels/{os.path.basename(img_name).split('.')[0]}.txt')
     if pred_summary_path.exists():
         with open(pred_summary_path) as f:
             labels = f.read().splitlines()
@@ -94,7 +93,7 @@ def predict():
             'time': time.time()
         }
 
-        # TODO store the prediction_summary in MongoDB
+        #TODO store the prediction_summary in MongoDB
         data = json.loads(json_util.dumps(prediction_summary))
         conn = mongoAPI(mongo_user,mongo_pass,database,collection)
         conn.insert_prediction(data)

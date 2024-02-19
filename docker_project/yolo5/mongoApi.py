@@ -23,4 +23,3 @@ class mongoAPI:
         return
     def get_database_names(self):
         return self.client.list_database_names()
-
