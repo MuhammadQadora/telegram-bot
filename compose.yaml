@@ -89,7 +89,7 @@ services:
   yolov5:
     depends_on:
       - setup
-    image: muhammadqadora/yolov5:1.4
+    image: muhammadqadora/yolov5:latest
     container_name: yolov5
     hostname: yolov5
     networks:
@@ -130,7 +130,7 @@ services:
 secrets:
   mysecret:
     file: .env
-    
+
 networks:
   cluster:
 
