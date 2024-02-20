@@ -101,10 +101,10 @@ services:
       MONGO_USER: ${user}
       MONGO_PASS: ${pass}
       CONNECTION_STRING: ${connection_string}
-      AWS_ACCESS_KEY_ID: ${aws_access_key_id}
-      AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
     secrets:
       - mysecret
+    volumes:
+      - C:\Users\moham\.aws:/root/.aws
 
 
   polybot:
@@ -118,14 +118,14 @@ services:
     ports:
       - 8443:8443
     environment:
-      AWS_ACCESS_KEY_ID: ${aws_access_key_id}
-      AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
       TELEGRAM_TOKEN: ${telegram_token}
       TELEGRAM_APP_URL: ${ngrok_url}
       YOLO_URL: ${yolo_url}
       BUCKET_NAME: ${bucket_name}
     secrets:
       - mysecret
+    volumes:
+      - C:\Users\moham\.aws:/root/.aws
 
 secrets:
   mysecret:
