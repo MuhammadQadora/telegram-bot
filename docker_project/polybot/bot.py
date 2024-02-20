@@ -9,7 +9,7 @@ import boto3
 from botocore.exceptions import ClientError
 import requests
 
-url = os.environ['YOLO_URL']
+url_yolo = os.environ['YOLO_URL']
 images_bucket = os.environ['BUCKET_NAME']
 
 
@@ -118,7 +118,7 @@ class ObjectDetectionBot(Bot):
                 logger.info(e)
                 return False
             # TODO send a request to the `yolo5` service for prediction localhost:8081/predict?imgName=nfb
-            response = requests.post(f"{url}/predict?imgName=bot/received/{os.path.basename(file_path)}")
+            response = requests.post(f"{url_yolo}/predict?imgName=bot/received/{os.path.basename(file_path)}")
             # TODO send results to the Telegram end-user
             if response.ok:
                 data = response.json()

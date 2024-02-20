@@ -110,7 +110,7 @@ services:
   polybot:
     depends_on:
       - yolov5
-    image: muhammadqadora/polybot
+    image: muhammadqadora/polybot:latest
     container_name: polybot
     hostname: polybot
     networks:
@@ -124,9 +124,13 @@ services:
       TELEGRAM_APP_URL: ${ngrok_url}
       YOLO_URL: ${yolo_url}
       BUCKET_NAME: ${bucket_name}
+    secrets:
+      - mysecret
+
 secrets:
   mysecret:
     file: .env
+    
 networks:
   cluster:
 
