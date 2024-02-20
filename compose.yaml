@@ -89,7 +89,7 @@ services:
   yolov5:
     depends_on:
       - setup
-    image: muhammadqadora/yolov5:1.3
+    image: muhammadqadora/yolov5:1.4
     container_name: yolov5
     hostname: yolov5
     networks:
@@ -102,10 +102,28 @@ services:
       MONGO_PASS: ${pass}
       CONNECTION_STRING: ${connection_string}
       AWS_ACCESS_KEY_ID: ${aws_access_key_id}
-      AWS_SECRET_ACCESS_KEY : ${aws_secret_access_key}
+      AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
     secrets:
       - mysecret
 
+
+  polybot:
+    depends_on:
+      - yolov5
+    image: muhammadqadora/polybot
+    container_name: polybot
+    hostname: polybot
+    networks:
+      - cluster
+    ports:
+      - 8443:8443
+    environment:
+      AWS_ACCESS_KEY_ID: ${aws_access_key_id}
+      AWS_SECRET_ACCESS_KEY: ${aws_secret_access_key}
+      TELEGRAM_TOKEN: ${telegram_token}
+      TELEGRAM_APP_URL: ${ngrok_url}
+      YOLO_URL: ${yolo_url}
+      BUCKET_NAME: ${bucket_name}
 secrets:
   mysecret:
     file: .env
