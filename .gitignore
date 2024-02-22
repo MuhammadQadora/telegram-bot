@@ -1,2 +1,3 @@
 DB-setup/key
 .env
+/ngrok/*
