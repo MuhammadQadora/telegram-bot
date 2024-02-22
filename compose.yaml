@@ -110,6 +110,7 @@ services:
   polybot:
     depends_on:
       - yolov5
+      - ngrok
     image: muhammadqadora/polybot:latest
     container_name: polybot
     hostname: polybot
@@ -127,6 +128,16 @@ services:
     volumes:
       - C:\Users\moham\.aws:/root/.aws
 
+  ngrok:
+    image: ngrok/ngrok
+    environment:
+      NGROK_AUTHTOKEN: ${ngrok_token}
+    secrets:
+      - mysecret
+    command: ["http","--domain=${domain}","polybot:8443"]
+    networks:
+      - cluster
+    
 secrets:
   mysecret:
     file: .env
