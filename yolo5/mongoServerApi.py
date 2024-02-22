@@ -1,7 +1,8 @@
-import pymongo
 import os
+import pymongo
 
-connection_string = os.environ['CONNECTION_STRING']
+CONNECTION_STRING = os.environ['CONNECTION_STRING']
+
 class mongoAPI:
     def __init__(self,  username, password, database, collection):
         self.database = database
@@ -9,8 +10,8 @@ class mongoAPI:
         self.username = username
         self.password = password
         self.client = pymongo.MongoClient(
-            f"mongodb://{self.username}:{self.password}@{connection_string}"
-            )
+            f"mongodb://{self.username}:{self.password}@{CONNECTION_STRING}"
+        )
         # Initialize the database, and create collection if it does not exist
         self.db = self.client[self.database]
 
@@ -21,5 +22,6 @@ class mongoAPI:
         collection = self.db[self.collection]
         collection.insert_one(pred)
         return
+
     def get_database_names(self):
         return self.client.list_database_names()

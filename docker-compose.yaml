@@ -1,0 +1,147 @@
+version: '3.9'
+
+services:
+  mongo_1:
+    hostname: ${MONGO_DB1_NAME}
+    container_name: ${MONGO_DB1_NAME}
+    image: mongo:5
+    ports:
+      - ${MONGO_DB1_PORT}:${MONGO_PORT}
+    networks:
+      - mongoCluster
+    volumes:
+      - mongo_1:/data/db
+      - ./DB-setup/script.sh:/script.sh
+      - ./DB-setup/${KEY_FILE}:/${KEY_FILE}
+    secrets:
+      - my_secret
+    restart: unless-stopped
+    command: [ "bash", "-c", "/script.sh" ]
+
+  mongo_2:
+    hostname: ${MONGO_DB2_NAME}
+    container_name: ${MONGO_DB2_NAME}
+    image: mongo:5
+    ports:
+      - ${MONGO_DB2_PORT}:${MONGO_PORT}
+    networks:
+      - mongoCluster
+    volumes:
+      - mongo_2:/data/db
+      - ./DB-setup/script.sh:/script.sh
+      - ./DB-setup/${KEY_FILE}:/${KEY_FILE}
+    secrets:
+      - my_secret
+    restart: unless-stopped
+    command: [ "bash", "-c", "/script.sh" ]
+
+  mongo_3:
+    hostname: ${MONGO_DB3_NAME}
+    container_name: ${MONGO_DB3_NAME}
+    image: mongo:5
+    ports:
+      - ${MONGO_DB3_PORT}:${MONGO_PORT}
+    networks:
+      - mongoCluster
+    volumes:
+      - mongo_3:/data/db
+      - ./DB-setup/script.sh:/script.sh
+      - ./DB-setup/${KEY_FILE}:/${KEY_FILE}
+    secrets:
+      - my_secret
+    restart: unless-stopped
+    command: [ "bash", "-c", "/script.sh" ]
+
+  init_setup:
+    depends_on:
+      - mongo_1
+      - mongo_2
+      - mongo_3
+    hostname: ${MONGO_SETUP_NAME}
+    container_name: ${MONGO_SETUP_NAME}
+    image: mongo:5
+    ports:
+      - ${MONGO_SETUP_PORT}:${MONGO_PORT}
+    networks:
+      - mongoCluster
+    volumes:
+      - ./DB-setup/init.sh:/init.sh
+      - ./DB-setup/${KEY_FILE}:/${KEY_FILE}
+      - ./DB-setup/initiate.js:/initiate.js
+      - ./DB-setup/createUser.js:/createUser.js
+      - ./DB-setup/reconfig.js:/reconfig.js
+    secrets:
+      - my_secret
+    command: [ "bash", "-c", "/init.sh" ]
+
+  mongo-express:
+    depends_on:
+      - init_setup
+    image: mongo-express
+    container_name: mongo-express
+    hostname: mongo-express
+    ports:
+      - "8081:8081"
+    networks:
+      - mongoCluster
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${ADMIN_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${ADMIN_PASS}
+      ME_CONFIG_MONGODB_SERVER: ${MONGO_SERVER}
+    secrets:
+      - my_secret
+
+  yolo5:
+    depends_on:
+      - init_setup
+    image: firasnaarani/yolov5
+    container_name: yolo5
+    hostname: yolo5
+    ports:
+      - "4000:4000"
+    networks:
+      - mongoCluster
+    environment:
+      BUCKET_NAME: ${BUCKET_NAME}
+      CONNECTION_STRING: ${CONNECTION_STRING}
+      MONGO_USER: ${ADMIN_USER}
+      MONGO_PASS: ${ADMIN_PASS}
+    volumes:
+      - ${AWS_CONF}:/root/.aws
+    secrets:
+      - my_secret
+
+  polybot:
+    depends_on:
+      - yolo5
+    image: firasnaarani/polybot:1.1
+    container_name: polybot
+    hostname: polybot
+    ports:
+      - 8443:8443
+    networks:
+      - mongoCluster
+    environment:
+      BUCKET_NAME: ${BUCKET_NAME}
+      YOLO_URL: ${YOLO_URL}
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      TELEGRAM_APP_URL: ${TELEGRAM_APP_URL}
+    volumes:
+      - ${AWS_CONF}:/root/.aws
+    secrets:
+      - my_secret
+
+networks:
+  mongoCluster:
+    driver: bridge
+
+volumes:
+  .env:
+  mongo_1:
+  mongo_2:
+  mongo_3:
+  DB-setup:
+
+secrets:
+  my_secret:
+    file: ./.env

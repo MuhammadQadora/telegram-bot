@@ -7,4 +7,3 @@ pymongo
 
 pylint
 pytest
-pillow
