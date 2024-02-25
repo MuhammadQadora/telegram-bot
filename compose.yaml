@@ -111,13 +111,13 @@ services:
     depends_on:
       - yolov5
       - ngrok
-    image: muhammadqadora/polybot:latest
+    image: muhammadqadora/telegrambot:1.4
     container_name: polybot
     hostname: polybot
     networks:
       - cluster
     ports:
-      - 8443:8443
+      - 5000:5000
     environment:
       TELEGRAM_TOKEN: ${telegram_token}
       TELEGRAM_APP_URL: ${ngrok_url}
@@ -134,7 +134,7 @@ services:
       NGROK_AUTHTOKEN: ${ngrok_token}
     secrets:
       - mysecret
-    command: ["http","--domain=${domain}","polybot:8443"]
+    command: ["http","--domain=${domain}","polybot:5000"]
     networks:
       - cluster
     
