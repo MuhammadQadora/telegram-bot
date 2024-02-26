@@ -140,7 +140,7 @@ class ObjectDetectionBot(Bot):
                 elif(text.startswith('/chatgpt')):
                     self.send_text(msg['chat']['id'], f"🔞🔜 ℂ𝕙𝕒𝕥 𝕎𝕚𝕥𝕙 ℂ𝕙𝕒𝕥𝔾ℙ𝕋 🔜🔞")
                 else:
-                    self.send_text(msg['chat']['id'], f"𝕐𝕠𝕦 𝕊𝕖𝕟𝕥 𝔸 𝕋𝕖𝕩𝕥 𝕄𝕖𝕤𝕤𝕒𝕘𝕖:\n{msg["text"]}")
+                    self.send_text(msg['chat']['id'], f"𝕐𝕠𝕦 𝕊𝕖𝕟𝕥 𝔸 𝕋𝕖𝕩𝕥 𝕄𝕖𝕤𝕤𝕒𝕘𝕖:\n{msg['text']}")
             case _:
                 # TODO handle other types of messages
                 self.send_text(msg['chat']['id'], "😵‍💫 𝕊𝕠𝕣𝕣𝕪, 𝕀 ℂ𝕒𝕟 𝕆𝕟𝕝𝕪 ℍ𝕒𝕟𝕕𝕝𝕖 'ℙ𝕙𝕠𝕥𝕠𝕤' 𝔸𝕟𝕕 '𝕋𝕖𝕩𝕥𝕤' 😵‍💫")
