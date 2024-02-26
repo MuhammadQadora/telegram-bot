@@ -98,7 +98,7 @@ services:
     container_name: yolo5
     hostname: yolo5
     ports:
-      - "4000:4000"
+      - "${PORT_YOLO}:${PORT_YOLO}"
     networks:
       - mongoCluster
     environment:
@@ -118,7 +118,7 @@ services:
     container_name: polybot
     hostname: polybot
     ports:
-      - 8443:8443
+      - ${PORT_POLYBOT}:${PORT_POLYBOT}
     networks:
       - mongoCluster
     environment:
@@ -130,6 +130,16 @@ services:
       - ${AWS_CONF}:/root/.aws
     secrets:
       - my_secret
+
+  ngrok:
+      image: ngrok/ngrok
+      environment:
+        NGROK_AUTHTOKEN: ${NGROK_AUTH_TOKEN}
+      secrets:
+        - my_secret
+      command: ["http","--domain=${domain}","polybot:${PORT_POLYBOT}"]
+      networks:
+        - mongoCluster
 
 networks:
   mongoCluster:

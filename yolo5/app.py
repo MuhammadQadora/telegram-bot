@@ -11,6 +11,7 @@ from loguru import logger
 from mongoServerApi import mongoAPI
 from bson import json_util
 
+PORT_YOLO = os.environ['PORT_YOLO']
 IMAGES_BUCKET = os.environ['BUCKET_NAME']
 MONGO_USER = os.environ['MONGO_USER']
 MONGO_PASS = os.environ['MONGO_PASS']
@@ -114,4 +115,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=4000)
+    app.run(host='0.0.0.0', port=PORT_YOLO)
