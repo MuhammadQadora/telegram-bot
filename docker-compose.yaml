@@ -112,11 +112,23 @@ services:
     secrets:
       - my_secret
 
+  ngrok:
+      image: ngrok/ngrok
+      container_name: ngrok
+      hostname: ngrok
+      environment:
+        NGROK_AUTHTOKEN: ${NGROK_AUTH_TOKEN}
+      secrets:
+        - my_secret
+      command: ["http","--domain=${DOMAIN}","polybot:${PORT_POLYBOT}"]
+      networks:
+        - mongoCluster
+
   polybot:
     depends_on:
       - yolo5
       - ngrok
-    image: firasnaarani/polybot:1.2
+    image: firasnaarani/polybot
     container_name: polybot
     hostname: polybot
     ports:
@@ -130,20 +142,10 @@ services:
       TELEGRAM_APP_URL: ${TELEGRAM_APP_URL}
     volumes:
       - ${AWS_CONF}:/root/.aws
+      - D:\GitHub\telegram-bot\polybot\app.py:/app/app.py
+      - D:\GitHub\telegram-bot\polybot\bot.py:/app/bot.py
     secrets:
       - my_secret
-
-  ngrok:
-      image: ngrok/ngrok
-      container_name: ngrok
-      hostname: ngrok
-      environment:
-        NGROK_AUTHTOKEN: ${NGROK_AUTH_TOKEN}
-      secrets:
-        - my_secret
-      command: ["http","--domain=${DOMAIN}","polybot:${PORT_POLYBOT}"]
-      networks:
-        - mongoCluster
 
 networks:
   mongoCluster:
