@@ -128,7 +128,7 @@ services:
     depends_on:
       - yolo5
       - ngrok
-    image: firasnaarani/polybot
+    image: firasnaarani/polybot:1.0
     container_name: polybot
     hostname: polybot
     ports:
@@ -140,6 +140,7 @@ services:
       YOLO_URL: ${YOLO_URL}
       TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
       TELEGRAM_APP_URL: ${TELEGRAM_APP_URL}
+      GPT_KEY: ${GPT_KEY}
     volumes:
       - ${AWS_CONF}:/root/.aws
       - D:\GitHub\telegram-bot\polybot\app.py:/app/app.py

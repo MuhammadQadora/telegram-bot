@@ -2,6 +2,7 @@ import os
 import requests
 import time
 import telebot
+from openai import OpenAI
 from io import BytesIO
 from loguru import logger
 from telebot import types
@@ -12,10 +13,11 @@ TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 IMAGES_BUCKET = os.environ['BUCKET_NAME']
 YOLO_URL = os.environ['YOLO_URL']
+GPT_KEY = os.environ['GPT_KEY']
 
 isPhoto = bool
 isGPT = bool
-
+client = OpenAI(api_key=GPT_KEY)
 
 class Util:
 
@@ -68,7 +70,8 @@ class Bot:
     def getHelp(self):
         @self.bot.message_handler(commands=['help'])
         def help(msg):
-            self.bot.send_message(msg.chat.id,f"ℂ𝕦𝕣𝕣𝕖𝕟𝕥𝕝𝕪 𝕥𝕙𝕚𝕤 𝕓𝕠𝕥 𝕚𝕤 𝕔𝕒𝕡𝕒𝕓𝕝𝕖 𝕠𝕗 𝕣𝕖𝕔𝕖𝕚𝕧𝕚𝕟𝕘 𝕒 𝕡𝕚𝕔𝕥𝕦𝕣𝕖 𝕒𝕟𝕕 𝕚𝕕𝕖𝕟𝕥𝕚𝕗𝕪𝕚𝕟𝕘 𝕠𝕓𝕛𝕖𝕔𝕥𝕤.\n𝕊𝕠𝕠𝕟 𝕨𝕚𝕝𝕝 𝕓𝕖 𝕔𝕒𝕡𝕒𝕓𝕝𝕖 𝕠𝕗 𝕙𝕒𝕟𝕕𝕝𝕚𝕟𝕘 𝕧𝕚𝕕𝕖𝕠𝕤 𝕒𝕟𝕕 𝕨𝕚𝕝𝕝 𝕒𝕝𝕝𝕠𝕨 𝔾ℙ𝕋-𝟜 𝕔𝕠𝕞𝕞𝕦𝕟𝕚𝕔𝕒𝕥𝕚𝕠𝕟.")
+            self.bot.send_message(
+                msg.chat.id, f"ℂ𝕦𝕣𝕣𝕖𝕟𝕥𝕝𝕪 𝕥𝕙𝕚𝕤 𝕓𝕠𝕥 𝕚𝕤 𝕔𝕒𝕡𝕒𝕓𝕝𝕖 𝕠𝕗 𝕣𝕖𝕔𝕖𝕚𝕧𝕚𝕟𝕘 𝕒 𝕡𝕚𝕔𝕥𝕦𝕣𝕖 𝕒𝕟𝕕 𝕚𝕕𝕖𝕟𝕥𝕚𝕗𝕪𝕚𝕟𝕘 𝕠𝕓𝕛𝕖𝕔𝕥𝕤.\n𝕊𝕠𝕠𝕟 𝕨𝕚𝕝𝕝 𝕓𝕖 𝕔𝕒𝕡𝕒𝕓𝕝𝕖 𝕠𝕗 𝕙𝕒𝕟𝕕𝕝𝕚𝕟𝕘 𝕧𝕚𝕕𝕖𝕠𝕤 𝕒𝕟𝕕 𝕨𝕚𝕝𝕝 𝕒𝕝𝕝𝕠𝕨 𝔾ℙ𝕋-𝟜 𝕔𝕠𝕞𝕞𝕦𝕟𝕚𝕔𝕒𝕥𝕚𝕠𝕟.")
 
             # # Creating an inline keyboard with two buttons
             markup = types.InlineKeyboardMarkup()
@@ -142,7 +145,8 @@ class Bot:
                         msg.chat.id, f"⛔️𝕊𝕠𝕞𝕖𝕥𝕙𝕚𝕟𝕘 𝕨𝕖𝕟𝕥 𝕨𝕣𝕠𝕟𝕘, 𝕖𝕚𝕥𝕙𝕖𝕣 𝕥𝕙𝕖 𝕚𝕞𝕒𝕘𝕖 𝕔𝕠𝕟𝕥𝕒𝕚𝕟𝕤 𝕟𝕠 𝕠𝕓𝕛𝕖𝕔𝕥\n𝕠𝕣 𝕥𝕙𝕖 𝕚𝕞𝕒𝕘𝕖 𝕤𝕚𝕫𝕖 𝕚𝕤 𝕥𝕠𝕠 𝕓𝕚𝕘\n𝕡𝕝𝕖𝕒𝕤𝕖 𝕥𝕣𝕪 𝕒𝕘𝕒𝕚𝕟⛔️!")
                 self.isPhoto = False
             else:
-                self.bot.send_message(msg.chat.id, f"👻𝕐𝕠𝕦 𝕞𝕒𝕪 𝕦𝕤𝕖 /help 𝕥𝕠 𝕤𝕖𝕖 𝕞𝕪 𝕥𝕒𝕝𝕖𝕟𝕥𝕤👻")
+                self.bot.send_message(
+                    msg.chat.id, f"👻𝕐𝕠𝕦 𝕞𝕒𝕪 𝕦𝕤𝕖 /help 𝕥𝕠 𝕤𝕖𝕖 𝕞𝕪 𝕥𝕒𝕝𝕖𝕟𝕥𝕤👻")
 
     def getVideo(self):
         @self.bot.message_handler(content_types=['video'])
@@ -154,8 +158,22 @@ class Bot:
         @self.bot.message_handler(content_types=['text'])
         def text(msg):
             if (self.isGPT == True):
-                self.bot.send_message(msg.chat.id, f"🔞🔜 ℂ𝕙𝕒𝕥 𝕎𝕚𝕥𝕙 ℂ𝕙𝕒𝕥𝔾ℙ𝕋 🔜🔞")
+                self.bot.send_message(msg.chat.id, f"👾𝕁𝕦𝕤𝕥 𝕒 𝕞𝕠𝕞𝕖𝕟𝕥, 𝕀'𝕞 𝕠𝕟 𝕚𝕥👾")
                 self.isGPT = False
+                try:
+                    completion = client.chat.completions.create(
+                        model="gpt-4",
+                        messages=[
+                            {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
+                            {"role": "user", "content": f"{msg.text}"}
+                        ]
+                        )
+                    if completion.choices:
+                        self.bot.send_message(msg.chat.id, completion.choices[0].message.content)
+                    else:
+                        self.bot.send_message(msg.chat.id, "ERROR WITH GPT")
+                except Exception as e:
+                    logger.info("Error:", e)
 
             else:
                 self.bot.send_message(
