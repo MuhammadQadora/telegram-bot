@@ -19,30 +19,33 @@ isPhoto = bool
 sentPhoto = bool
 isGPT = bool
 chatWithGPT = bool
+textToIMG = bool
 client = OpenAI(api_key=GPT_KEY)
+
 
 class Util:
 
     def __init__(self, json_data):
         self.json_data = json_data
 
-    def SendMessageForGPT(self,msg):
+    def SendMessageForGPT(self, msg):
         try:
             completion = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
-                {"role": "user", "content": f"{msg.text}"}
-            ]
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
+                    {"role": "user", "content": f"{msg.text}"}
+                ]
             )
             if completion.choices:
-                self.bot.send_message(msg.chat.id, completion.choices[0].message.content)
+                self.bot.send_message(
+                    msg.chat.id, completion.choices[0].message.content)
             else:
                 self.bot.send_message(msg.chat.id, "ERROR WITH GPT")
         except Exception as e:
             logger.info("Error:", e)
 
-    def objects_counter(self):
+    def ObjectsCounter(self):
         total_items = len(self.json_data['labels'])
         print(f"There are {total_items} items in the JSON")
         class_count = {}
@@ -60,6 +63,21 @@ class Util:
                 result += f"\t{key}\t👉🏼\t{val}\n"
             return result
 
+    def GenerateIMG(self, msg):
+        self.bot.send_message(msg.chat.id, f"🥸ℂ𝕣𝕖𝕒𝕥𝕚𝕟𝕘 𝕒𝕟 𝕚𝕞𝕒𝕘𝕖 𝕗𝕠𝕣 𝕪𝕠𝕦🥸\n😮‍💨𝕁𝕦𝕤𝕥 𝕙𝕠𝕝𝕕 𝕠𝕟 𝕒 𝕞𝕠𝕞𝕖𝕟𝕥😮‍💨")
+        try:
+            response = client.images.generate(
+            model="dall-e-3",
+            prompt=msg.text,
+            size="1024x1024",
+            quality="standard",
+            n=1,
+            )
+            image_url = response.data[0].url
+            self.bot.reply_to(msg, image_url)
+        except:
+            print("\n\n\nAn unexpected error occurred while trying")
+
 
 class Bot:
     # Initiate connection with telegram
@@ -74,6 +92,7 @@ class Bot:
         self.sentPhoto = False
         self.isGPT = False
         self.chatWithGPT = False
+        self.textToIMG = False
 
     # this function continuously checks for comming messages
     def updater(self, request):
@@ -94,6 +113,7 @@ class Bot:
             self.isPhoto = False
             self.sentPhoto = False
             self.chatWithGPT = False
+            self.textToIMG = False
             # self.bot.send_message(
             #     msg.chat.id, f"ℂ𝕦𝕣𝕣𝕖𝕟𝕥𝕝𝕪 𝕥𝕙𝕚𝕤 𝕓𝕠𝕥 𝕚𝕤 𝕔𝕒𝕡𝕒𝕓𝕝𝕖 𝕠𝕗 𝕣𝕖𝕔𝕖𝕚𝕧𝕚𝕟𝕘 𝕒 𝕡𝕚𝕔𝕥𝕦𝕣𝕖 𝕒𝕟𝕕 𝕚𝕕𝕖𝕟𝕥𝕚𝕗𝕪𝕚𝕟𝕘 𝕠𝕓𝕛𝕖𝕔𝕥𝕤.\n𝕊𝕠𝕠𝕟 𝕨𝕚𝕝𝕝 𝕓𝕖 𝕔𝕒𝕡𝕒𝕓𝕝𝕖 𝕠𝕗 𝕙𝕒𝕟𝕕𝕝𝕚𝕟𝕘 𝕧𝕚𝕕𝕖𝕠𝕤 𝕒𝕟𝕕 𝕨𝕚𝕝𝕝 𝕒𝕝𝕝𝕠𝕨 𝔾ℙ𝕋-𝟜 𝕔𝕠𝕞𝕞𝕦𝕟𝕚𝕔𝕒𝕥𝕚𝕠𝕟.")
 
@@ -106,7 +126,9 @@ class Bot:
                 '🤠𝔸𝕤𝕜 𝔸 ℚ𝕦𝕖𝕤𝕥𝕚𝕠𝕟🤠', callback_data='gptQuest')
             button3 = types.InlineKeyboardButton(
                 '🤖ℂ𝕙𝕒𝕥 𝕎𝕚𝕥𝕙 𝔾ℙ𝕋🤖', callback_data='gptChat')
-            markup.add(button1, button2, button3)
+            button4 = types.InlineKeyboardButton(
+                '👽𝔾𝕖𝕟𝕖𝕣𝕒𝕥𝕖 ℙ𝕙𝕠𝕥𝕠👽', callback_data='genPic')
+            markup.add(button1, button2, button3, button4)
 
             # Sending a message with the inline keyboard
             self.bot.send_message(
@@ -120,19 +142,30 @@ class Bot:
                 self.isPhoto = True
                 self.isGPT = False
                 self.chatWithGPT = False
+                self.textToIMG = False
                 self.bot.send_message(
                     call.message.chat.id, "🫣ℙ𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 𝕒 𝕡𝕙𝕠𝕥𝕠🫣")
             elif call.data == 'gptQuest':
                 self.isGPT = True
                 self.chatWithGPT = False
                 self.isPhoto = False
+                self.textToIMG = False
                 self.bot.send_message(
                     call.message.chat.id, "👂𝕎𝕙𝕒𝕥 𝕪𝕠𝕦 𝕨𝕚𝕤𝕙 𝕥𝕠 𝕣𝕖𝕢𝕦𝕖𝕤𝕥👂")
             elif call.data == 'gptChat':
                 self.isGPT = True
                 self.chatWithGPT = True
                 self.isPhoto = False
-                self.bot.send_message(call.message.chat.id, f"ℕ𝕠𝕨 𝕪𝕠𝕦 𝕦𝕤𝕖𝕤 𝕒 ℂ𝕙𝕒𝕥 𝕎𝕚𝕥𝕙 𝔾ℙ𝕋-𝟜 𝕄𝕠𝕕𝕖\n𝕋𝕠 𝕖𝕟𝕕 𝕚𝕥 𝕡𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 /closegpt")
+                self.textToIMG = False
+                self.bot.send_message(
+                    call.message.chat.id, f"ℕ𝕠𝕨 𝕪𝕠𝕦 𝕦𝕤𝕖𝕤 𝕒 ℂ𝕙𝕒𝕥 𝕎𝕚𝕥𝕙 𝔾ℙ𝕋-𝟜 𝕄𝕠𝕕𝕖\n𝕋𝕠 𝕖𝕟𝕕 𝕚𝕥 𝕡𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 /closegpt")
+            elif call.data == 'genPic':
+                self.textToIMG = True
+                self.isGPT = False
+                self.chatWithGPT = False
+                self.isPhoto = False
+                self.bot.send_message(
+                    call.message.chat.id, f"🧐𝔾𝕚𝕧𝕖 𝕞𝕖 𝕒 𝕕𝕖𝕤𝕔𝕣𝕚𝕡𝕥𝕚𝕠𝕟 𝕠𝕗 𝕥𝕙𝕖 𝕡𝕙𝕠𝕥𝕠🧐")
 
     # This function responds with a greeting when the user uses /version
     def getVersion(self):
@@ -184,7 +217,7 @@ class Bot:
                 if response.status_code == 200:
                     data = response.json()
                     utility = Util(data)
-                    processed_data = utility.objects_counter()
+                    processed_data = utility.ObjectsCounter()
                     self.bot.reply_to(msg, f"{processed_data}")
                 else:
                     self.bot.send_message(
@@ -205,22 +238,21 @@ class Bot:
     def getText(self):
         @self.bot.message_handler(content_types=['text'])
         def text(msg):
-            if (self.isGPT == True):
-                if(self.chatWithGPT == False):
-                    self.bot.send_message(msg.chat.id, f"👾𝕁𝕦𝕤𝕥 𝕒 𝕞𝕠𝕞𝕖𝕟𝕥, 𝕀'𝕞 𝕠𝕟 𝕚𝕥👾")
-                    Util.SendMessageForGPT(self,msg)
+            if self.isGPT:
+                if not self.chatWithGPT:
+                    self.bot.send_message(
+                    msg.chat.id, f"👾𝕁𝕦𝕤𝕥 𝕒 𝕞𝕠𝕞𝕖𝕟𝕥, 𝕀'𝕞 𝕠𝕟 𝕚𝕥👾")
+                    Util.SendMessageForGPT(self, msg)
                     self.isGPT = False
                     self.isPhoto = False
                     self.sentPhoto = False
                 else:
-                    # self.bot.send_message(msg.chat.id, f"👾ℍ𝕚 {msg.from_user.first_name},\nℕ𝕠𝕨 𝕪𝕠𝕦 𝕦𝕤𝕖𝕤 𝕒 ℂ𝕙𝕒𝕥 𝕎𝕚𝕥𝕙 𝔾ℙ𝕋-𝟜 𝕄𝕠𝕕𝕖\n 𝕥𝕠 𝕖𝕟𝕕 𝕚𝕥 𝕡𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 /closegpt👾")
-                    Util.SendMessageForGPT(self,msg)
-                    # self.isGPT = False
-                    # self.isPhoto = False
-                    # self.sentPhoto = False
-            elif(self.isPhoto == True and self.sentPhoto == False):
+                    Util.SendMessageForGPT(self, msg)
+            elif self.isPhoto  and not self.sentPhoto:
                 self.bot.send_message(msg.chat.id, "🫣ℙ𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 𝕒 𝕡𝕙𝕠𝕥𝕠🫣")
+            elif self.textToIMG:
+                Util.GenerateIMG(self, msg)
+                self.textToIMG = False
             else:
                 self.bot.send_message(
                     msg.chat.id, f"𝕐𝕠𝕦 𝕊𝕖𝕟𝕥 𝔸 𝕋𝕖𝕩𝕥 𝕄𝕖𝕤𝕤𝕒𝕘𝕖:\n{msg.text}\n👻𝕐𝕠𝕦 𝕞𝕒𝕪 𝕦𝕤𝕖 /help 𝕥𝕠 𝕤𝕖𝕖 𝕞𝕪 𝕥𝕒𝕝𝕖𝕟𝕥𝕤👻")
-    
