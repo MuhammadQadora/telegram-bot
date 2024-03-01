@@ -70,11 +70,12 @@ class Util:
             model="dall-e-3",
             prompt=msg.text,
             size="1024x1024",
-            quality="standard",
+            quality="hd",
             n=1,
             )
             image_url = response.data[0].url
-            self.bot.reply_to(msg, image_url)
+            img = requests.get(image_url).content
+            self.bot.send_photo(msg.chat.id, img)
         except:
             print("\n\n\nAn unexpected error occurred while trying")
 

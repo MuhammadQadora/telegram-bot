@@ -35,7 +35,6 @@ def predict():
         return jsonify({"error": "No image name provided"}), 400
 
     try:
-        bucket_name = os.getenv('BUCKET_NAME')
         s3 = boto3.client('s3')
 
         # create directory if it does not exist
