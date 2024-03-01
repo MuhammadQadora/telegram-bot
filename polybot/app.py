@@ -18,6 +18,7 @@ def webhook():
 bot = Bot()
 bot.startCommand()
 bot.getVersion()
+bot.getCloseGPT()
 bot.getPhoto()
 bot.getHelp()
 bot.getOpions()
