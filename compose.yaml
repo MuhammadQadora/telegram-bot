@@ -94,8 +94,6 @@ services:
     hostname: yolov5
     networks:
       - cluster
-    ports:
-      - 4000:4000
     environment:
       BUCKET_NAME: ${bucket_name}
       MONGO_USER: ${user}
@@ -111,7 +109,7 @@ services:
     depends_on:
       - yolov5
       - ngrok
-    image: muhammadqadora/telegrambot:1.4
+    image: muhammadqadora/telegrambot:latest
     container_name: polybot
     hostname: polybot
     networks:
@@ -123,6 +121,7 @@ services:
       TELEGRAM_APP_URL: ${ngrok_url}
       YOLO_URL: ${yolo_url}
       BUCKET_NAME: ${bucket_name}
+      openai_key: ${openai_key}
     secrets:
       - mysecret
     volumes:

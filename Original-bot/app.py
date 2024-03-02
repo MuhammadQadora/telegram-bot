@@ -13,6 +13,8 @@ def webhook():
 
 bot = Bot()
 bot.startCommand()
-bot.downloadPhoto()
 bot.getHelp()
+bot.callback()
+bot.text_handler()
+bot.photo_handler()
 app.run(debug=True,host="0.0.0.0",port=5000)
