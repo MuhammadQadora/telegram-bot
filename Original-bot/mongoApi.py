@@ -23,5 +23,12 @@ class mongoAPI:
     def insert_prediction(self, pred):
         self.collection.insert_one(pred)
         return
+    def insert_document(self, chat_id):
+        self.collection.insert_one({"chat_id":f"{chat_id}","chat_history":[]})
+        return
+    def get_document_by_chat_id(self,chat_id):
+        return self.collection.find_one({"chat_id":f"{chat_id}"})
+    def update_document_by_chat_id(self,chat_id,role_message):
+        self.collection.update_one({"chat_id":f"{chat_id}"},{"$set":{"chat_history": role_message }})
     def get_database_names(self):
         return self.client.list_database_names()

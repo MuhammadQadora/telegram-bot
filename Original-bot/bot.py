@@ -7,11 +7,15 @@ import boto3, botocore.exceptions
 import requests
 import time 
 from openAi import AI
+from mongoApi import mongoAPI
 token = os.environ['TELEGRAM_TOKEN']
 url = os.environ['TELEGRAM_APP_URL']
 bucket_name = os.environ['BUCKET_NAME']
 yolo_url = os.environ['YOLO_URL']
-
+mongo_user = os.environ['MONGO_USER']
+mongo_pass = os.environ['MONGO_PASS']
+database = 'gpt'
+collection = 'chatlog'
 
 class Util:
     def __init__(self, json_data):
@@ -49,7 +53,7 @@ class Bot:
         self.yolo = bool
         self.question = bool
         self.textToImage = bool
-        self.chat_history = []
+        self.mongo = mongoAPI(mongo_user,mongo_pass,database,collection)
     #this function continuously checks for comming messages 
     def updater(self,request):
         update = telebot.types.Update.de_json(request)
@@ -160,10 +164,16 @@ class Bot:
                 if msg.text == '/quit':
                     self.gpt4 = False
                     return
-                self.chat_history.append({"role":"user","content":f"{msg.text}"})
-                assistant_response = self.chatgpt.gpt(self.chat_history)
-                self.chat_history.append({"role":"assistant","content":f"{assistant_response}"})
+                document_in_db = self.mongo.get_document_by_chat_id(msg.chat.id)
+                if document_in_db is None:
+                    self.mongo.insert_document(msg.chat.id)
+                document_in_db = self.mongo.get_document_by_chat_id(msg.chat.id)
+                chat_history = document_in_db['chat_history']
+                chat_history.append({"role":"user","content":f"{msg.text}"})
+                assistant_response = self.chatgpt.gpt(chat_history)
+                chat_history.append({"role":"assistant","content":f"{assistant_response}"})
                 self.bot.send_message(msg.chat.id,f"{assistant_response}")
+                self.mongo.update_document_by_chat_id(msg.chat.id,chat_history)
                 logger.info("chat with gpt Deactivated")
             elif self.yolo == True:
                 self.bot.send_message(msg.chat.id,"You must upload a photo not Text")

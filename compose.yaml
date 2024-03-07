@@ -104,7 +104,6 @@ services:
     volumes:
       - C:\Users\moham\.aws:/root/.aws
 
-
   polybot:
     depends_on:
       - yolov5
@@ -122,6 +121,9 @@ services:
       YOLO_URL: ${yolo_url}
       BUCKET_NAME: ${bucket_name}
       openai_key: ${openai_key}
+      MONGO_USER: ${user}
+      MONGO_PASS: ${pass}
+      CONNECTION_STRING: ${connection_string}
     secrets:
       - mysecret
     volumes:
