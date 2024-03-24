@@ -128,7 +128,7 @@ services:
     depends_on:
       - yolo5
       - ngrok
-    image: firasnaarani/polybot
+    image: firasnaarani/polybot:1.0
     container_name: polybot
     hostname: polybot
     ports:
