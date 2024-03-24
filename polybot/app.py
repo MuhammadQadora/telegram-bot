@@ -2,11 +2,9 @@ import os
 from bot import Bot
 from loguru import logger
 from flask import Flask,request
+from bot import TELEGRAM_TOKEN
 
 app = Flask(__name__)
-
-TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
-
 
 @app.route(f'/{TELEGRAM_TOKEN}',methods=["POST"])
 def webhook():

@@ -101,12 +101,13 @@ def predict():
             'time': time.time()
         }
 
-        try:
-            data = json.loads(json_util.dumps(prediction_summary))
-            conn = mongoAPI(MONGO_USER, MONGO_PASS, DATABASE, COLLECTION)
-            conn.insert_prediction(data)
-        except:
-            logger.warning("Error while saving prediction info into MongoDB.")
+        # TODO: Should be DynamoDB
+        # try:
+        #     data = json.loads(json_util.dumps(prediction_summary))
+        #     conn = mongoAPI(MONGO_USER, MONGO_PASS, DATABASE, COLLECTION)
+        #     conn.insert_prediction(data)
+        # except:
+        #     logger.warning("Error while saving prediction info into MongoDB.")
 
         return prediction_summary
     else:

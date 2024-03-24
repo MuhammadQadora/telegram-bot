@@ -9,16 +9,17 @@ from telebot import types
 import boto3
 import botocore.exceptions
 from mongoServerApi import mongoAPI
+import SecretManager
 
-TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
-TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
-IMAGES_BUCKET = os.environ['BUCKET_NAME']
-YOLO_URL = os.environ['YOLO_URL']
-GPT_KEY = os.environ['GPT_KEY']
-MONGO_USER = os.environ['MONGO_USER']
-MONGO_PASS = os.environ['MONGO_PASS']
-DATABASE = 'gpt'
-COLLECTION = 'chatlog'
+TELEGRAM_APP_URL = SecretManager.secret_value['TELEGRAM_APP_URL']
+TELEGRAM_TOKEN = SecretManager.secret_value['TELEGRAM_TOKEN']
+IMAGES_BUCKET = SecretManager.secret_value['BUCKET_NAME']
+YOLO_URL = SecretManager.secret_value['YOLO_URL']
+GPT_KEY = SecretManager.secret_value['GPT_KEY']
+# MONGO_USER = SecretManager.secret_value['MONGO_USER']
+# MONGO_PASS = SecretManager.secret_value['MONGO_PASS']
+# DATABASE = 'gpt'
+# COLLECTION = 'chatlog'
 
 isPhoto = bool
 sentPhoto = bool
@@ -26,7 +27,7 @@ isGPT = bool
 chatWithGPT = bool
 textToIMG = bool
 client = OpenAI(api_key=GPT_KEY)
-mongoDB = mongoAPI(MONGO_USER, MONGO_PASS, DATABASE, COLLECTION)
+# mongoDB = mongoAPI(MONGO_USER, MONGO_PASS, DATABASE, COLLECTION)
 
 
 class Util:
@@ -46,21 +47,30 @@ class Util:
                 )
             else:
                 try:
-                    if not mongoDB.checkIfExeist(msg.chat.id):
-                        mongoDB.createLog(msg.chat.id)
-                    
-                    mongoDB.insertLog(msg.chat.id, "user", msg.text)
-                    
                     completion = client.chat.completions.create(
                     model="gpt-4",
-                    messages=mongoDB.getLog(msg.chat.id)
+                    messages=[
+                        {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
+                        {"role": "user", "content": f"{msg.text}"}
+                    ]
+                
+                    # TODO: This should be with DynamoDB
+                    # if not mongoDB.checkIfExeist(msg.chat.id):
+                    #     mongoDB.createLog(msg.chat.id)
+                    
+                    # mongoDB.insertLog(msg.chat.id, "user", msg.text)
+                    
+                    # completion = client.chat.completions.create(
+                    # model="gpt-4",
+                    # messages=mongoDB.getLog(msg.chat.id)
                 )
                 except:
-                    logger.warning("Error while saving prediction info into MongoDB.")
+                    # logger.warning("Error while saving prediction info into MongoDB.")
+                    logger.warning("TODO: Should be With DynamoDB")
             if completion.choices:
                 self.bot.send_message(
                     msg.chat.id, completion.choices[0].message.content)
-                mongoDB.insertLog(msg.chat.id, "system", completion.choices[0].message.content)
+                # mongoDB.insertLog(msg.chat.id, "system", completion.choices[0].message.content) TODO: Should be With DynamoDB
             else:
                 self.bot.send_message(msg.chat.id, "ERROR WITH GPT")
         except Exception as e:
