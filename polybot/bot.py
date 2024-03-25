@@ -8,7 +8,6 @@ from loguru import logger
 from telebot import types
 import boto3
 import botocore.exceptions
-from mongoServerApi import mongoAPI
 import SecretManager
 
 TELEGRAM_APP_URL = SecretManager.secret_value['TELEGRAM_APP_URL']
@@ -118,7 +117,7 @@ class Bot:
         self.bot.remove_webhook()
         time.sleep(1)
         self.bot.set_webhook(
-            url=f"{TELEGRAM_APP_URL}/{TELEGRAM_TOKEN}", timeout=60)
+            url=f"{TELEGRAM_APP_URL}/{TELEGRAM_TOKEN}", timeout=60,certificate=open("PublicKey.pem", 'r'))
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.isPhoto = False
         self.sentPhoto = False

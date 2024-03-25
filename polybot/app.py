@@ -6,6 +6,10 @@ from bot import TELEGRAM_TOKEN
 
 app = Flask(__name__)
 
+@app.route('/')
+def statusCheck():
+    return 'Ok',200
+
 @app.route(f'/{TELEGRAM_TOKEN}',methods=["POST"])
 def webhook():
     update = request.get_json()
