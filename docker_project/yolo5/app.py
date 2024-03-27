@@ -10,16 +10,15 @@ from loguru import logger
 import os
 import boto3
 from botocore.exceptions import ClientError
-
+from sec import secret_keys
 from bson import json_util
 ############################
 ###### TODO ###############
-images_bucket = 'mqbucket1'
-database = 'images'
-collection = 'predictions'
-region_name='us-east-1'
-queue_url = 'telegrambot-yolo5-mf'
-sns_topic_arn = 'arn:aws:sns:us-east-1:933060838752:telegrambot-sns-mf'
+images_bucket = secret_keys['BUCKET_NAME']
+region_name= secret_keys['REGION_NAME']
+queue_url = secret_keys['SQS_URL']
+sns_topic_arn = secret_keys['SNS_ARN']
+table = secret_keys['DYNAMO_TBL']
 with open("data/coco128.yaml", "rb") as stream:
     names = yaml.safe_load(stream)['names']
 
@@ -28,6 +27,7 @@ sns_client = boto3.client('sns',region_name=region_name)
 dynamodb = boto3.client('dynamodb', region_name=region_name)
 
 def predict():
+    logger.info("Started...")
     while True:
         response = sqs_client.receive_message(
             QueueUrl=queue_url,
@@ -115,7 +115,7 @@ def predict():
 
                     # Upload prediction_summary to dynamodb
                     response = dynamodb.put_item(
-                        TableName=queue_url,
+                        TableName=table,
                         Item={
                             '_id': {
                                 'S': msg_id
@@ -124,7 +124,7 @@ def predict():
                                 'N': str(new_epoch)
                             },
                             'text': {
-                                'S': prediction_summary
+                                'S': json.dumps(prediction_summary)
                             }
                         })
                 except botocore.exceptions as e:
