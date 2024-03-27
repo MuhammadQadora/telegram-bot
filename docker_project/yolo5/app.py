@@ -12,8 +12,7 @@ import boto3
 from botocore.exceptions import ClientError
 from sec import secret_keys
 from bson import json_util
-############################
-###### TODO ###############
+
 images_bucket = secret_keys['BUCKET_NAME']
 region_name= secret_keys['REGION_NAME']
 queue_url = secret_keys['SQS_URL']
