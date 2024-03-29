@@ -13,7 +13,8 @@ import json
 token = secret_keys['TELEGRAM_TOKEN']
 url = secret_keys['TELEGRAM_APP_URL']
 bucket_name = secret_keys['BUCKET_NAME']
-yolo_url = secret_keys['YOLO_URL']
+# yolo_url = secret_keys['YOLO_URL']
+yolo_url = "https://3ff2-2a06-c701-78dc-af00-91c2-e3ff-ea94-2007.ngrok-free.app"
 queue_url = secret_keys['SQS_URL']
 region_name = secret_keys['REGION_NAME']
 sns_topic_arn = secret_keys['SNS_ARN']
@@ -50,7 +51,7 @@ class Bot:
         self.bot = telebot.TeleBot(token=token)
         self.bot.remove_webhook()
         time.sleep(1)
-        self.bot.set_webhook(f"{url}/{token}",timeout=60,certificate=open('pub.cert','r'))
+        self.bot.set_webhook(f"{url}/{token}",timeout=60)
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
         self.gpt4 = bool
@@ -98,15 +99,20 @@ class Bot:
                 client = boto3.client('s3')
                 #try to upload picture to s3 bucket
                 try:
+                    print("uploading to s3")
                     client.upload_fileobj(memory, bucket_name, f"OriginalBot/received/{os.path.basename(file_info.file_path)}")
                 except botocore.exceptions.ClientError as e:    
                     logger.info(e)
                     return False
                 memory.close()
                 try:
-                    response = client.send_message(
+                    print('sending sqs')
+                    response = sqs_client.send_message(
                         QueueUrl=queue_url,
-                        MessageBody=json.dumps({"msg": msg, "path": f"OriginalBot/received/{os.path.basename(file_info.file_path)}"}))
+                        MessageBody=json.dumps({"chat_id": msg.chat.id,"msg_id": msg.message_id ,"path": f"OriginalBot/received/{os.path.basename(file_info.file_path)}"})
+                        )
+                    print(response)
+                    print('here')
                     self.bot.send_message(msg.chat.id,"Sent Image for processing.....")
                     logger.info(response)
                 except botocore.exceptions.ClientError as e:

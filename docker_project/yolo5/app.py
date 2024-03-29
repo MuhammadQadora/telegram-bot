@@ -51,6 +51,7 @@ def predict():
             if not os.path.exists('Images'):
                 os.mkdir('Images')
             #download image to Images folder
+            message = json.loads(message)
             img_name = message['path']
             try:
                 client.download_file(images_bucket, img_name, f"Images/{os.path.basename(img_name)}")
@@ -133,7 +134,7 @@ def predict():
                     continue
 
                 # Send sns to Telegrambot
-                result = {'job_id': msg_id,"msg": message['msg'], 'Status_Code': 200}
+                result = {'job_id': msg_id,"chat_id": message['chat_id'],"msg_id": message['msg_id'],'Status_Code': 200}
                 try:
                     response = sns_client.publish(
                         TopicArn=sns_topic_arn,
@@ -148,12 +149,14 @@ def predict():
                     logger.error(e)
                     continue
             else:
-                result = {'job_id': msg_id,"msg": message['msg'],'Status_Code': 404}
+                result = {'job_id': msg_id,"chat_id": message['chat_id'],"msg_id": message['msg_id'],'Status_Code': 404}
                 response = sns_client.publish(
                     TopicArn=sns_topic_arn,
                     Message=json.dumps({'default': json.dumps(result)}),
                     MessageStructure='json'
                 )
+                sqs_client.delete_message(
+                    QueueUrl=queue_url, ReceiptHandle=receipt_handle)
         else:
             continue
 

@@ -21,27 +21,28 @@ def webhook():
 #result = {'job_id': msg_id,"msg": message['chat_id'], 'Status_Code': 200}
 @app.route("/sns_update",methods=["POST"])
 def sns_notification():
-    data = request.get_json()
-    loguru.logger(data)
+    data = json.loads(request.get_data().decode())
     if 'Type' in data and data['Type'] == 'SubscriptionConfirmation':
         sns_client.confirm_subscription(TopicArn=data['TopicArn'], Token=data['Token'])
-        loguru.logger.info(f"Subscribed successfully with SubscriptionArn: {sns_topic_arn}")
-    data = json.load(data['Message'])
-    if 200 in data['Status_Code']:
-        response = dynamodb.get_item(
-            Key={
-                '_id': {
-                    'S': data['job_id'],
-                }
-            },
-            TableName=table
-            )
-        prediction = json.loads(response['Item']['text']['S'])
-        util = Util()
-        result = util.object_count(prediction)
-        bot.bot.reply_to(data['msg'],result)
+        loguru.logger.info(f"Subscribed successfully with SubscriptionArn: {subscription_arn}")
     else:
-        bot.bot.reply_to(data['msg'],"Something went wrong, either the image is too big\nor no objects were detected in the image.")
+        data = json.loads(data['Message'])
+        if data['Status_Code'] == 200:
+            response = dynamodb.get_item(
+                Key={
+                    '_id': {
+                        'S': data['job_id'],
+                    }
+                },
+                TableName=table
+                )
+            prediction = json.loads(response['Item']['text']['S'])
+            util = Util(prediction)
+            result = util.object_count()
+            bot.bot.send_message(data['chat_id'],result,reply_to_message_id=data['msg_id'])
+        else:
+            bot.bot.send_message(data['chat_id'],"Something went wrong, either the image is too big\nor no objects were detected in the image.",reply_to_message_id=data['msg_id'])
+    return 'Ok',200
 
 bot = Bot()
 bot.startCommand()
