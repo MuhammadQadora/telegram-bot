@@ -18,6 +18,8 @@ region_name= secret_keys['REGION_NAME']
 queue_url = secret_keys['SQS_URL']
 sns_topic_arn = secret_keys['SNS_ARN']
 table = secret_keys['DYNAMO_TBL']
+
+
 with open("data/coco128.yaml", "rb") as stream:
     names = yaml.safe_load(stream)['names']
 
@@ -49,7 +51,7 @@ def predict():
             if not os.path.exists('Images'):
                 os.mkdir('Images')
             #download image to Images folder
-            img_name = message
+            img_name = message['path']
             try:
                 client.download_file(images_bucket, img_name, f"Images/{os.path.basename(img_name)}")
             except ClientError as e:
@@ -131,7 +133,7 @@ def predict():
                     continue
 
                 # Send sns to Telegrambot
-                result = {'job_id': msg_id,'Status_Code': 200}
+                result = {'job_id': msg_id,"msg": message['msg'], 'Status_Code': 200}
                 try:
                     response = sns_client.publish(
                         TopicArn=sns_topic_arn,
@@ -146,7 +148,7 @@ def predict():
                     logger.error(e)
                     continue
             else:
-                result = {'job_id': msg_id, 'Status_Code': 404}
+                result = {'job_id': msg_id,"msg": message['msg'],'Status_Code': 404}
                 response = sns_client.publish(
                     TopicArn=sns_topic_arn,
                     Message=json.dumps({'default': json.dumps(result)}),

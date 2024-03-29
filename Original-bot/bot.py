@@ -7,15 +7,19 @@ import boto3, botocore.exceptions
 import requests
 import time 
 from openAi import AI
-from mongoApi import mongoAPI
-token = os.environ['TELEGRAM_TOKEN']
-url = os.environ['TELEGRAM_APP_URL']
-bucket_name = os.environ['BUCKET_NAME']
-yolo_url = os.environ['YOLO_URL']
-mongo_user = os.environ['MONGO_USER']
-mongo_pass = os.environ['MONGO_PASS']
-database = 'gpt'
-collection = 'chatlog'
+from sec import secret_keys
+import json
+
+token = secret_keys['TELEGRAM_TOKEN']
+url = secret_keys['TELEGRAM_APP_URL']
+bucket_name = secret_keys['BUCKET_NAME']
+yolo_url = secret_keys['YOLO_URL']
+queue_url = secret_keys['SQS_URL']
+region_name = secret_keys['REGION_NAME']
+sns_topic_arn = secret_keys['SNS_ARN']
+table = secret_keys['DYNAMO_TBL']
+
+sqs_client = boto3.client('sqs',region_name=region_name)
 
 class Util:
     def __init__(self, json_data):
@@ -46,14 +50,14 @@ class Bot:
         self.bot = telebot.TeleBot(token=token)
         self.bot.remove_webhook()
         time.sleep(1)
-        self.bot.set_webhook(f"{url}/{token}",timeout=60)
+        self.bot.set_webhook(f"{url}/{token}",timeout=60,certificate=open('pub.cert','r'))
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
         self.gpt4 = bool
         self.yolo = bool
         self.question = bool
         self.textToImage = bool
-        self.mongo = mongoAPI(mongo_user,mongo_pass,database,collection)
+        
     #this function continuously checks for comming messages 
     def updater(self,request):
         update = telebot.types.Update.de_json(request)
@@ -99,20 +103,27 @@ class Bot:
                     logger.info(e)
                     return False
                 memory.close()
-                #try posting to predict endpoint /predict
-                self.bot.send_message(msg.chat.id,"Almost Done..")
                 try:
-                    response = requests.post(url=f"{yolo_url}/predict?imgName=OriginalBot/received/{os.path.basename(file_info.file_path)}")
-                except requests.exceptions.RequestException as e:
-                    self.bot.send_message(msg.chat.id, "It seems that the server is not working properly!")
-                    logger.info(e)
-                if response.status_code == 200:
-                    data = response.json()
-                    utility = Util(data)
-                    processed_data = utility.object_count()
-                    self.bot.reply_to(msg, f"{processed_data}")
-                else:
-                    self.bot.send_message(msg.chat.id,"Something went wrong, either the image contains no object\nor the image size is too big\nplease try again!")
+                    response = client.send_message(
+                        QueueUrl=queue_url,
+                        MessageBody=json.dumps({"msg": msg, "path": f"OriginalBot/received/{os.path.basename(file_info.file_path)}"}))
+                    self.bot.send_message(msg.chat.id,"Sent Image for processing.....")
+                    logger.info(response)
+                except botocore.exceptions.ClientError as e:
+                    logger.error(e)
+                    return False
+                # try:
+                #     response = requests.post(url=f"{yolo_url}/predict?imgName=OriginalBot/received/{os.path.basename(file_info.file_path)}")
+                # except requests.exceptions.RequestException as e:
+                #     self.bot.send_message(msg.chat.id, "It seems that the server is not working properly!")
+                #     logger.info(e)
+                # if response.status_code == 200:
+                #     data = response.json()
+                #     utility = Util(data)
+                #     processed_data = utility.object_count()
+                #     self.bot.reply_to(msg, f"{processed_data}")
+                # else:
+                #     self.bot.send_message(msg.chat.id,"Something went wrong, either the image contains no object\nor the image size is too big\nplease try again!")
                 self.yolo = False
             elif self.gpt4 == True and self.yolo ==False and self.question == False:
                 self.bot.send_message(msg.chat.id,"For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /help .")
