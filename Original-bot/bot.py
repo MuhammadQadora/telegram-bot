@@ -55,7 +55,7 @@ class Bot:
         self.bot = telebot.TeleBot(token=token)
         self.bot.remove_webhook()
         time.sleep(1)
-        self.bot.set_webhook(f"{url}/{token}",timeout=60)
+        self.bot.set_webhook(f"{url}/{token}",timeout=60,certificate=open('pub.cert','r'))
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
         self.gpt4 = bool
@@ -118,18 +118,6 @@ class Bot:
                 except botocore.exceptions.ClientError as e:
                     logger.error(e)
                     return False
-                # try:
-                #     response = requests.post(url=f"{yolo_url}/predict?imgName=OriginalBot/received/{os.path.basename(file_info.file_path)}")
-                # except requests.exceptions.RequestException as e:
-                #     self.bot.send_message(msg.chat.id, "It seems that the server is not working properly!")
-                #     logger.info(e)
-                # if response.status_code == 200:
-                #     data = response.json()
-                #     utility = Util(data)
-                #     processed_data = utility.object_count()
-                #     self.bot.reply_to(msg, f"{processed_data}")
-                # else:
-                #     self.bot.send_message(msg.chat.id,"Something went wrong, either the image contains no object\nor the image size is too big\nplease try again!")
                 self.yolo = False
             elif self.gpt4 == True and self.yolo ==False and self.question == False:
                 self.bot.send_message(msg.chat.id,"For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /help .")
