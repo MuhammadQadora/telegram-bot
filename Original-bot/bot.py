@@ -19,7 +19,7 @@ bucket_name = secret_keys['BUCKET_NAME']
 queue_url = secret_keys['SQS_URL']
 region_name = secret_keys['REGION_NAME']
 sns_topic_arn = secret_keys['SNS_ARN']
-
+table = secret_keys['DYNAMO_TBL']
 
 #######################
 
@@ -182,9 +182,25 @@ class Bot:
                     self.gpt4 = False
                     return
                 dynamo_obj = dynamodbAPI()
+                #get the chat log
                 response = dynamo_obj.get_item(msg.chat.id)
                 if not 'Item' in response:
-                    pass
+                    template = dynamo_obj.init(msg.chat.id,'user',msg.text)
+                    dynamo_obj.put_item(template)
+                
+                chat_history = dynamo_obj.conver_dynamodb_dictionary_to_regular(msg.chat.id)
+                chat_history.append({"role":"user","content":f"{msg.text}"})
+
+                assistant_response = self.chatgpt.gpt(chat_history)
+                
+                chat_history.append({"role":"assistant","content": f"{assistant_response}"})
+                self.bot.send_message(msg.chat.id,f"{assistant_response}")
+                feed_to_dynamo_update = dynamo_obj.convert_regular_dictionary_to_dynamodb(chat_history)
+                logger.info(feed_to_dynamo_update)
+                Item = dynamo_obj.template(msg.chat.id,feed_to_dynamo_update)
+                dynamo_obj.put_item(Item)
+
+                
                 # document_in_db = self.mongo.get_document_by_chat_id(msg.chat.id)
                 # if document_in_db is None:
                 #     self.mongo.insert_document(msg.chat.id)
