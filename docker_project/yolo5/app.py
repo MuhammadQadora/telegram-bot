@@ -12,12 +12,12 @@ import boto3
 from botocore.exceptions import ClientError
 from sec import secret_keys
 from bson import json_util
-
+from dynamodbAPI import dynamodbAPI
 images_bucket = secret_keys['BUCKET_NAME']
 region_name= secret_keys['REGION_NAME']
 queue_url = secret_keys['SQS_URL']
 sns_topic_arn = secret_keys['SNS_ARN']
-table = secret_keys['DYNAMO_TBL']
+
 
 
 with open("data/coco128.yaml", "rb") as stream:
@@ -25,7 +25,6 @@ with open("data/coco128.yaml", "rb") as stream:
 
 sqs_client = boto3.client('sqs',region_name=region_name)
 sns_client = boto3.client('sns',region_name=region_name)
-dynamodb = boto3.client('dynamodb', region_name=region_name)
 
 def predict():
     logger.info("Started...")
@@ -114,11 +113,7 @@ def predict():
                     current_epoch = int(datetime.datetime.now().timestamp())
                     # Add 5 minutes to the current time
                     new_epoch = current_epoch + (5 * 60)  # 1 minutes in seconds
-
-                    # Upload prediction_summary to dynamodb
-                    response = dynamodb.put_item(
-                        TableName=table,
-                        Item={
+                    Item={
                             '_id': {
                                 'S': msg_id
                             },
@@ -128,7 +123,10 @@ def predict():
                             'text': {
                                 'S': json.dumps(prediction_summary)
                             }
-                        })
+                        }
+                    # Upload prediction_summary to dynamodb
+                    dynamo_obj = dynamodbAPI()
+                    response = dynamo_obj.put_item(Item=Item)
                 except botocore.exceptions as e:
                     logger.error(e)
                     continue

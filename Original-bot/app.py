@@ -5,12 +5,12 @@ app = Flask(__name__)
 import boto3
 from bot import Bot
 import loguru
-from bot import token,region_name, sns_topic_arn, yolo_url,table,Util
+from bot import token,region_name, sns_topic_arn, url,table,Util
 
 
 sns_client = boto3.client('sns',region_name=region_name)
 dynamodb = boto3.client('dynamodb', region_name=region_name)
-server_endpoint = f"{yolo_url}/sns_update"
+server_endpoint = f"{url}/sns_update"
 
 @app.route(f'/{token}',methods=["POST"])
 def webhook():
@@ -38,7 +38,7 @@ def sns_notification():
                 )
             prediction = json.loads(response['Item']['text']['S'])
             util = Util(prediction)
-            result = util.object_count()
+            result = util.object_count(prediction)
             bot.bot.send_message(data['chat_id'],result,reply_to_message_id=data['msg_id'])
         else:
             bot.bot.send_message(data['chat_id'],"Something went wrong, either the image is too big\nor no objects were detected in the image.",reply_to_message_id=data['msg_id'])
