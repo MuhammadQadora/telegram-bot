@@ -38,7 +38,7 @@ def sns_notification():
                 )
             prediction = json.loads(response['Item']['text']['S'])
             util = Util(prediction)
-            result = util.object_count(prediction)
+            result = util.object_count()
             bot.bot.send_message(data['chat_id'],result,reply_to_message_id=data['msg_id'])
         else:
             bot.bot.send_message(data['chat_id'],"Something went wrong, either the image is too big\nor no objects were detected in the image.",reply_to_message_id=data['msg_id'])

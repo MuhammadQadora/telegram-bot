@@ -196,21 +196,8 @@ class Bot:
                 chat_history.append({"role":"assistant","content": f"{assistant_response}"})
                 self.bot.send_message(msg.chat.id,f"{assistant_response}")
                 feed_to_dynamo_update = dynamo_obj.convert_regular_dictionary_to_dynamodb(chat_history)
-                logger.info(feed_to_dynamo_update)
                 Item = dynamo_obj.template(msg.chat.id,feed_to_dynamo_update)
                 dynamo_obj.put_item(Item)
-
-                
-                # document_in_db = self.mongo.get_document_by_chat_id(msg.chat.id)
-                # if document_in_db is None:
-                #     self.mongo.insert_document(msg.chat.id)
-                # document_in_db = self.mongo.get_document_by_chat_id(msg.chat.id)
-                # chat_history = document_in_db['chat_history']
-                # chat_history.append({"role":"user","content":f"{msg.text}"})
-                # assistant_response = self.chatgpt.gpt(chat_history)
-                # chat_history.append({"role":"assistant","content":f"{assistant_response}"})
-                # self.bot.send_message(msg.chat.id,f"{assistant_response}")
-                # self.mongo.update_document_by_chat_id(msg.chat.id,chat_history)
                 logger.info("chat with gpt Deactivated")
             elif self.yolo == True:
                 self.bot.send_message(msg.chat.id,"You must upload a photo not Text")

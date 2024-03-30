@@ -30,13 +30,13 @@ class dynamodbAPI:
         }
         return Item
 
-    def template(self,msg_chat_id,Item):
+    def template(self,msg_chat_id,the_list):
         Item = {
             '_id': {
                 'N': str(msg_chat_id)
             },
             'chat_logs': {
-                'L': {'M':Item}
+                'L': the_list
             }
         }
         return Item
@@ -61,8 +61,8 @@ class dynamodbAPI:
     def conver_dynamodb_dictionary_to_regular(self, msg):
         response = self.get_item(msg)
         formated = []
-        for i in range(len(response)):
-            format_me = response['Item']['chat_logs']['L'][0]['M']
+        for i in range(len(response['Item']['chat_logs']['L'])):
+            format_me = response['Item']['chat_logs']['L'][i]['M']
             formated.append(
                 {"role": format_me['role']['S'], "content": format_me['content']['S']})
         return formated
@@ -72,5 +72,5 @@ class dynamodbAPI:
         for i in range(len(chat_history)):
             format_me = chat_history[i]
             formated.append(
-                {'content': {'S': format_me['content']}, 'role': {'S': format_me['role']}})
+                {'M':{'content': {'S': format_me['content']}, 'role': {'S': format_me['role']}}})
         return formated
