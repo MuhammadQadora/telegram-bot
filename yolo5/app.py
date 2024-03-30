@@ -11,18 +11,18 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 from sec import secret_keys
+from dynamodbAPI import dynamodbAPI
 
 images_bucket = secret_keys['BUCKET_NAME']
 region_name= secret_keys['REGION_NAME']
 queue_url = secret_keys['SQS_URL']
 sns_topic_arn = secret_keys['SNS_ARN']
-table = secret_keys['DYNAMO_TBL']
+
 with open("data/coco128.yaml", "rb") as stream:
     names = yaml.safe_load(stream)['names']
 
 sqs_client = boto3.client('sqs',region_name=region_name)
 sns_client = boto3.client('sns',region_name=region_name)
-dynamodb = boto3.client('dynamodb', region_name=region_name)
 
 def predict():
     logger.info("Started...")
@@ -48,7 +48,8 @@ def predict():
             if not os.path.exists('Images'):
                 os.mkdir('Images')
             #download image to Images folder
-            img_name = message
+            message = json.loads(message)
+            img_name = message['path']
             try:
                 client.download_file(images_bucket, img_name, f"Images/{os.path.basename(img_name)}")
             except ClientError as e:
@@ -110,11 +111,7 @@ def predict():
                     current_epoch = int(datetime.datetime.now().timestamp())
                     # Add 5 minutes to the current time
                     new_epoch = current_epoch + (5 * 60)  # 1 minutes in seconds
-
-                    # Upload prediction_summary to dynamodb
-                    response = dynamodb.put_item(
-                        TableName=table,
-                        Item={
+                    Item={
                             '_id': {
                                 'S': msg_id
                             },
@@ -124,13 +121,16 @@ def predict():
                             'text': {
                                 'S': json.dumps(prediction_summary)
                             }
-                        })
+                        }
+                    # Upload prediction_summary to dynamodb
+                    dynamo_obj = dynamodbAPI()
+                    response = dynamo_obj.put_item(Item=Item)
                 except botocore.exceptions as e:
                     logger.error(e)
                     continue
 
                 # Send sns to Telegrambot
-                result = {'job_id': msg_id,'Status_Code': 200}
+                result = {'job_id': msg_id,"chat_id": message['chat_id'],"msg_id": message['msg_id'],'Status_Code': 200}
                 try:
                     response = sns_client.publish(
                         TopicArn=sns_topic_arn,
@@ -145,12 +145,14 @@ def predict():
                     logger.error(e)
                     continue
             else:
-                result = {'job_id': msg_id, 'Status_Code': 404}
+                result = {'job_id': msg_id,"chat_id": message['chat_id'],"msg_id": message['msg_id'],'Status_Code': 404}
                 response = sns_client.publish(
                     TopicArn=sns_topic_arn,
                     Message=json.dumps({'default': json.dumps(result)}),
                     MessageStructure='json'
                 )
+                sqs_client.delete_message(
+                    QueueUrl=queue_url, ReceiptHandle=receipt_handle)
         else:
             continue
 
