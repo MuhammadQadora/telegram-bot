@@ -1,7 +1,8 @@
 import os
-import requests
+import json
 import time
 import telebot
+import requests
 from openai import OpenAI
 from io import BytesIO
 from loguru import logger
@@ -9,25 +10,29 @@ from telebot import types
 import boto3
 import botocore.exceptions
 import SecretManager
+from dynamodbAPI import dynamodbAPI
+import telebot.types
 
-TELEGRAM_APP_URL = SecretManager.secret_value['TELEGRAM_APP_URL']
+
+# TELEGRAM_APP_URL = SecretManager.secret_value['TELEGRAM_APP_URL']
+TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
 TELEGRAM_TOKEN = SecretManager.secret_value['TELEGRAM_TOKEN']
 IMAGES_BUCKET = SecretManager.secret_value['BUCKET_NAME']
-YOLO_URL = SecretManager.secret_value['YOLO_URL']
 GPT_KEY = SecretManager.secret_value['GPT_KEY']
-# MONGO_USER = SecretManager.secret_value['MONGO_USER']
-# MONGO_PASS = SecretManager.secret_value['MONGO_PASS']
-# DATABASE = 'gpt'
-# COLLECTION = 'chatlog'
+SQS_URL = SecretManager.secret_value['SQS_URL']
+REGION_NAME = SecretManager.secret_value['REGION_NAME']
+SNS_ARN = SecretManager.secret_value['SNS_ARN']
+DYNAMO_TBL = SecretManager.secret_value['DYNAMO_TBL']
 
 isPhoto = bool
 sentPhoto = bool
 isGPT = bool
 chatWithGPT = bool
 textToIMG = bool
-client = OpenAI(api_key=GPT_KEY)
-# mongoDB = mongoAPI(MONGO_USER, MONGO_PASS, DATABASE, COLLECTION)
 
+client = OpenAI(api_key=GPT_KEY)
+sqs_client = boto3.client('sqs', region_name=REGION_NAME)
+dynamo_obj = dynamodbAPI()
 
 class Util:
 
@@ -46,33 +51,46 @@ class Util:
                 )
             else:
                 try:
+                    logger.info(f"START {msg.chat.id}")
+                    if not dynamo_obj.checkIfExeist(msgChatId=msg.chat.id):
+                        x = dynamo_obj.insertLog(msg.chat.id, "user", msg.text, True)
+                        logger.warning("YYYYESSS")
+                        logger.warning(x)
+
+                    else:
+                        y= dynamo_obj.insertLog(msg.chat.id, "bot", msg.text)
+                    history_log = dynamo_obj.getLogs(msg.chat.id)
+                    logger.warnings(history_log)
                     completion = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
-                        {"role": "user", "content": f"{msg.text}"}
-                    ]
-                
-                    # TODO: This should be with DynamoDB
-                    # if not mongoDB.checkIfExeist(msg.chat.id):
-                    #     mongoDB.createLog(msg.chat.id)
-                    
-                    # mongoDB.insertLog(msg.chat.id, "user", msg.text)
-                    
-                    # completion = client.chat.completions.create(
-                    # model="gpt-4",
-                    # messages=mongoDB.getLog(msg.chat.id)
-                )
+                        model="gpt-4",
+                        messages=dynamo_obj.getLogs(history_log)
+                        # messages=[
+                        #     {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
+                        #     {"role": "user", "content": f"{msg.text}"}
+                        # ]
+
+                        # TODO: This should be with DynamoDB
+                        # if not mongoDB.checkIfExeist(msg.chat.id):
+                        #     mongoDB.createLog(msg.chat.id)
+
+                        # mongoDB.insertLog(msg.chat.id, "user", msg.text)
+
+                        # completion = client.chat.completions.create(
+                        # model="gpt-4",
+                        # messages=mongoDB.getLog(msg.chat.id)
+                    )
                 except:
                     # logger.warning("Error while saving prediction info into MongoDB.")
                     logger.warning("TODO: Should be With DynamoDB")
             if completion.choices:
+                # dynamo_obj.insertLog(msg.chat.id, "system", completion.choices[0].message.content)
                 self.bot.send_message(
                     msg.chat.id, completion.choices[0].message.content)
+                
                 # mongoDB.insertLog(msg.chat.id, "system", completion.choices[0].message.content) TODO: Should be With DynamoDB
             else:
                 self.bot.send_message(msg.chat.id, "ERROR WITH GPT")
-        except Exception as e:
+        except botocore.exceptions as e:
             logger.info("Error:", e)
 
     def ObjectsCounter(self):
@@ -94,14 +112,15 @@ class Util:
             return result
 
     def GenerateIMG(self, msg):
-        self.bot.send_message(msg.chat.id, f"🥸ℂ𝕣𝕖𝕒𝕥𝕚𝕟𝕘 𝕒𝕟 𝕚𝕞𝕒𝕘𝕖 𝕗𝕠𝕣 𝕪𝕠𝕦🥸\n😮‍💨𝕁𝕦𝕤𝕥 𝕙𝕠𝕝𝕕 𝕠𝕟 𝕒 𝕞𝕠𝕞𝕖𝕟𝕥😮‍💨")
+        self.bot.send_message(
+            msg.chat.id, f"🥸ℂ𝕣𝕖𝕒𝕥𝕚𝕟𝕘 𝕒𝕟 𝕚𝕞𝕒𝕘𝕖 𝕗𝕠𝕣 𝕪𝕠𝕦🥸\n😮‍💨𝕁𝕦𝕤𝕥 𝕙𝕠𝕝𝕕 𝕠𝕟 𝕒 𝕞𝕠𝕞𝕖𝕟𝕥😮‍💨")
         try:
             response = client.images.generate(
-            model="dall-e-3",
-            prompt=msg.text,
-            size="1024x1024",
-            quality="hd",
-            n=1,
+                model="dall-e-3",
+                prompt=msg.text,
+                size="1024x1024",
+                quality="hd",
+                n=1,
             )
             image_url = response.data[0].url
             img = requests.get(image_url).content
@@ -117,7 +136,7 @@ class Bot:
         self.bot.remove_webhook()
         time.sleep(1)
         self.bot.set_webhook(
-            url=f"{TELEGRAM_APP_URL}/{TELEGRAM_TOKEN}", timeout=60,certificate=open("PublicKey.pem", 'r'))
+            url=f"{TELEGRAM_APP_URL}/{TELEGRAM_TOKEN}", timeout=60)
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.isPhoto = False
         self.sentPhoto = False
@@ -228,6 +247,7 @@ class Bot:
                 memory.write(photo_binary)
                 memory.seek(0)
                 client = boto3.client('s3')
+
                 # try to upload picture to s3 bucket
                 try:
                     client.upload_fileobj(
@@ -236,23 +256,23 @@ class Bot:
                     logger.info(e)
                     return False
                 memory.close()
+
                 # try posting to predict endpoint /predict
                 self.bot.send_message(msg.chat.id, f"🫡 𝔸𝕝𝕞𝕠𝕤𝕥 𝔻𝕠𝕟𝕖 🫡")
                 try:
-                    response = requests.post(url=f"{
-                        YOLO_URL}/predict?imgName=Bot/received/{os.path.basename(file_info.file_path)}")
-                except requests.exceptions.RequestException as e:
+                    response = sqs_client.send_message(
+                        QueueUrl=SQS_URL,
+                        MessageBody=json.dumps({"chat_id": msg.chat.id, "msg_id": msg.message_id, "path": f"OriginalBot/received/{os.path.basename(file_info.file_path)}"})
+                    )
+                    self.bot.send_message(
+                        msg.chat.id, "Sent Image for processing.....")
+                    logger.info(response)
+                except botocore.exceptions.ClientError as e:
+                    logger.error(e)
                     self.bot.send_message(
                         msg.chat.id, f"⛔️𝕀𝕥 𝕤𝕖𝕖𝕞𝕤 𝕥𝕙𝕒𝕥 𝕥𝕙𝕖 𝕤𝕖𝕣𝕧𝕖𝕣 𝕚𝕤 𝕟𝕠𝕥 𝕨𝕠𝕣𝕜𝕚𝕟𝕘 𝕡𝕣𝕠𝕡𝕖𝕣𝕝𝕪⛔️")
-                    logger.info(e)
-                if response.status_code == 200:
-                    data = response.json()
-                    utility = Util(data)
-                    processed_data = utility.ObjectsCounter()
-                    self.bot.reply_to(msg, f"{processed_data}")
-                else:
-                    self.bot.send_message(
-                        msg.chat.id, f"⛔️𝕊𝕠𝕞𝕖𝕥𝕙𝕚𝕟𝕘 𝕨𝕖𝕟𝕥 𝕨𝕣𝕠𝕟𝕘, 𝕖𝕚𝕥𝕙𝕖𝕣 𝕥𝕙𝕖 𝕚𝕞𝕒𝕘𝕖 𝕔𝕠𝕟𝕥𝕒𝕚𝕟𝕤 𝕟𝕠 𝕠𝕓𝕛𝕖𝕔𝕥\n𝕠𝕣 𝕥𝕙𝕖 𝕚𝕞𝕒𝕘𝕖 𝕤𝕚𝕫𝕖 𝕚𝕤 𝕥𝕠𝕠 𝕓𝕚𝕘\n𝕡𝕝𝕖𝕒𝕤𝕖 𝕥𝕣𝕪 𝕒𝕘𝕒𝕚𝕟⛔️!")
+                    return False
+
                 self.isPhoto = False
             else:
                 self.bot.send_message(
@@ -272,14 +292,14 @@ class Bot:
             if self.isGPT:
                 if not self.chatWithGPT:
                     self.bot.send_message(
-                    msg.chat.id, f"👾𝕁𝕦𝕤𝕥 𝕒 𝕞𝕠𝕞𝕖𝕟𝕥, 𝕀'𝕞 𝕠𝕟 𝕚𝕥👾")
+                        msg.chat.id, f"👾𝕁𝕦𝕤𝕥 𝕒 𝕞𝕠𝕞𝕖𝕟𝕥, 𝕀'𝕞 𝕠𝕟 𝕚𝕥👾")
                     Util.SendMessageForGPT(self, msg)
                     self.isGPT = False
                     self.isPhoto = False
                     self.sentPhoto = False
                 else:
                     Util.SendMessageForGPT(self, msg, True)
-            elif self.isPhoto  and not self.sentPhoto:
+            elif self.isPhoto and not self.sentPhoto:
                 self.bot.send_message(msg.chat.id, "🫣ℙ𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 𝕒 𝕡𝕙𝕠𝕥𝕠🫣")
             elif self.textToIMG:
                 Util.GenerateIMG(self, msg)

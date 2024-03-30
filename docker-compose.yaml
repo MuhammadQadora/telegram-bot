@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  ngrok:
+    image: ngrok/ngrok
+    container_name: ngrok
+    hostname: ngrok
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTH_TOKEN}
+    secrets:
+      - my_secret
+    command: ["http", "--domain=${DOMAIN}", "polybot:${PORT_POLYBOT}"]
+    networks:
+      - mongoCluster
+
+  polybot:
+    depends_on:
+      - ngrok
+    image: firasnaarani/polybot_aws:1.0
+    container_name: polybot
+    hostname: polybot
+    ports:
+      - ${PORT_POLYBOT}:${PORT_POLYBOT}
+    networks:
+      - mongoCluster
+    environment:
+      BUCKET_NAME: ${BUCKET_NAME}
+      YOLO_URL: ${YOLO_URL}
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      TELEGRAM_APP_URL: ${TELEGRAM_APP_URL}
+      GPT_KEY: ${GPT_KEY}
+      MONGO_USER: ${ADMIN_USER}
+      MONGO_PASS: ${ADMIN_PASS}
+      CONNECTION_STRING: ${CONNECTION_STRING}
+    volumes:
+      - ${AWS_CONF}:/root/.aws
+      - D:\GitHub\telegram-bot\polybot\app.py:/app/app.py
+      - D:\GitHub\telegram-bot\polybot\bot.py:/app/bot.py
+      - D:\GitHub\telegram-bot\polybot\dynamodbAPI.py:/app/dynamodbAPI.py
+    secrets:
+      - my_secret
+
+networks:
+  mongoCluster:
+    driver: bridge
+
+volumes:
+  .env:
+  mongo_1:
+  mongo_2:
+  mongo_3:
+  DB-setup:
+
+secrets:
+  my_secret:
+    file: ./.env
