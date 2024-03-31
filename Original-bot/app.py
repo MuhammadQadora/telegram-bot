@@ -12,6 +12,11 @@ sns_client = boto3.client('sns',region_name=region_name)
 dynamodb = boto3.client('dynamodb', region_name=region_name)
 server_endpoint = f"{url}/sns_update"
 
+
+@app.route('/')
+def statusCheck():
+    return 'Ok', 200
+
 @app.route(f'/{token}',methods=["POST"])
 def webhook():
     update = request.get_json()

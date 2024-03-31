@@ -45,7 +45,7 @@ def predict():
             msg_id = response['Messages'][0]['MessageId']
             logger.info(response)
             # TODO download img_name from S3, store the local image path in original_img_path
-            client = boto3.client('s3')
+            client = boto3.client('s3',region_name=region_name)
             #create directory if it does not exist
             if not os.path.exists('Images'):
                 os.mkdir('Images')
