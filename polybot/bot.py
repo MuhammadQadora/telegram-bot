@@ -14,8 +14,7 @@ from dynamodbAPI import dynamodbAPI
 import telebot.types
 
 
-# TELEGRAM_APP_URL = SecretManager.secret_value['TELEGRAM_APP_URL']
-TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
+TELEGRAM_APP_URL = SecretManager.secret_value['TELEGRAM_APP_URL']
 TELEGRAM_TOKEN = SecretManager.secret_value['TELEGRAM_TOKEN']
 IMAGES_BUCKET = SecretManager.secret_value['BUCKET_NAME']
 GPT_KEY = SecretManager.secret_value['GPT_KEY']
@@ -32,7 +31,6 @@ textToIMG = bool
 
 client = OpenAI(api_key=GPT_KEY)
 sqs_client = boto3.client('sqs', region_name=REGION_NAME)
-dynamo_obj = dynamodbAPI()
 
 class Util:
 
@@ -45,51 +43,50 @@ class Util:
                 completion = client.chat.completions.create(
                     model="gpt-4",
                     messages=[
-                        {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
                         {"role": "user", "content": f"{msg.text}"}
                     ]
                 )
+
+                response = completion.choices[0].message.content
+                self.bot.send_message(
+                    msg.chat.id, response)
             else:
                 try:
+                    dynamo_obj = dynamodbAPI()
                     logger.info(f"START {msg.chat.id}")
-                    if not dynamo_obj.checkIfExeist(msgChatId=msg.chat.id):
-                        x = dynamo_obj.insertLog(msg.chat.id, "user", msg.text, True)
-                        logger.warning("YYYYESSS")
-                        logger.warning(x)
+                    response = dynamo_obj.get_item(msg.chat.id)
+                    if not 'Item' in response:
+                        template = dynamo_obj.init(msg.chat.id,'user',msg.text)
+                        dynamo_obj.put_item(template)
 
-                    else:
-                        y= dynamo_obj.insertLog(msg.chat.id, "bot", msg.text)
-                    history_log = dynamo_obj.getLogs(msg.chat.id)
-                    logger.warnings(history_log)
+                    chat_history = dynamo_obj.conver_dynamodb_dictionary_to_regular(
+                        msg.chat.id)
+                    
+                    chat_history.append({"role":"user","content":f"{msg.text}"})
+                    
                     completion = client.chat.completions.create(
                         model="gpt-4",
-                        messages=dynamo_obj.getLogs(history_log)
-                        # messages=[
-                        #     {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
-                        #     {"role": "user", "content": f"{msg.text}"}
-                        # ]
-
-                        # TODO: This should be with DynamoDB
-                        # if not mongoDB.checkIfExeist(msg.chat.id):
-                        #     mongoDB.createLog(msg.chat.id)
-
-                        # mongoDB.insertLog(msg.chat.id, "user", msg.text)
-
-                        # completion = client.chat.completions.create(
-                        # model="gpt-4",
-                        # messages=mongoDB.getLog(msg.chat.id)
+                        messages=chat_history
                     )
+
+                    response = completion.choices[0].message.content
+
+                    chat_history.append(
+                        {"role": "assistant", "content": f"{response}"})
+                    
+                    self.bot.send_message(
+                    msg.chat.id, response)
+                    
+                    try:
+                        feed_to_dynamo_update = dynamo_obj.convert_regular_dictionary_to_dynamodb(chat_history)
+                        Item = dynamo_obj.template(msg.chat.id,feed_to_dynamo_update)
+                        dynamo_obj.put_item(Item)
+                    except:
+                        logger.error("Error while saving chat logs into DynamoDB.")
                 except:
-                    # logger.warning("Error while saving prediction info into MongoDB.")
-                    logger.warning("TODO: Should be With DynamoDB")
-            if completion.choices:
-                # dynamo_obj.insertLog(msg.chat.id, "system", completion.choices[0].message.content)
-                self.bot.send_message(
-                    msg.chat.id, completion.choices[0].message.content)
-                
-                # mongoDB.insertLog(msg.chat.id, "system", completion.choices[0].message.content) TODO: Should be With DynamoDB
-            else:
-                self.bot.send_message(msg.chat.id, "ERROR WITH GPT")
+                    logger.error("ERROR With DynamoDB")
+
+
         except botocore.exceptions as e:
             logger.info("Error:", e)
 
@@ -136,7 +133,7 @@ class Bot:
         self.bot.remove_webhook()
         time.sleep(1)
         self.bot.set_webhook(
-            url=f"{TELEGRAM_APP_URL}/{TELEGRAM_TOKEN}", timeout=60)
+            url=f"{TELEGRAM_APP_URL}/{TELEGRAM_TOKEN}", timeout=60, certificate=open('PublicKey.pem','r'))
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.isPhoto = False
         self.sentPhoto = False
@@ -262,7 +259,8 @@ class Bot:
                 try:
                     response = sqs_client.send_message(
                         QueueUrl=SQS_URL,
-                        MessageBody=json.dumps({"chat_id": msg.chat.id, "msg_id": msg.message_id, "path": f"OriginalBot/received/{os.path.basename(file_info.file_path)}"})
+                        MessageBody=json.dumps({"chat_id": msg.chat.id, "msg_id": msg.message_id,
+                                                "path": f"OriginalBot/received/{os.path.basename(file_info.file_path)}"})
                     )
                     self.bot.send_message(
                         msg.chat.id, "Sent Image for processing.....")
