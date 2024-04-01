@@ -12,7 +12,7 @@ import json
 from dynamodbAPI import dynamodbAPI
 from local_user_DB import *
 
-list_members = [{}]
+list_members = []
 
 ##################
 token = secret_keys['TELEGRAM_TOKEN']
@@ -55,7 +55,7 @@ class Bot:
         self.bot = telebot.TeleBot(token=token)
         self.bot.remove_webhook()
         time.sleep(1)
-        self.bot.set_webhook(f"{url}/{token}",timeout=60,certificate=open('pub.cert','r'))
+        self.bot.set_webhook(f"{url}/{token}",timeout=60)
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
 
@@ -68,8 +68,10 @@ class Bot:
         @self.bot.message_handler(commands=['start'])
         def start(msg):
             global list_members
+            logger.info(list_members)
             self.bot.send_message(msg.chat.id, f"Hi there {msg.from_user.first_name}.\nWelcome to my bot detector, to see what this Bot can do use /help .")
             add_member(list_members, msg.chat.id)
+            logger.info(len(list_members))
 
     #This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
     #then return answer to the user
@@ -77,7 +79,7 @@ class Bot:
         @self.bot.message_handler(commands=['help'])
         def help(msg):
             global list_members
-
+            
             if is_member_in_list_by_name(list_members, msg.chat.id):
                 member = get_member_by_name(list_members, msg.chat.id)
                 notify = member.notify

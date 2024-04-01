@@ -1,5 +1,5 @@
 from enum import Enum
-
+from loguru import logger
 class Notify(Enum):
     CHATGPT = 'chatgpt'
     GPT4 = 'gpt4'
@@ -25,14 +25,24 @@ def is_member_in_list_by_name(bot_members, name):
     """
     Check if a member object with a given name exists in the list.
     """
-    return any(member.name == name for member in bot_members)
+    result = [i for i in bot_members if name in i]
+    logger.info(result)
+    if result:
+        return True
+    else:
+        return False
 
 def add_member(bot_members, name):
     """
     Add a new member to the list if it doesn't already exist.
     """
-    if not is_member_in_list_by_name(bot_members, name):
+    res = is_member_in_list_by_name(bot_members, name)
+    logger.info(res)
+    if is_member_in_list_by_name(bot_members, name) == False:
+        print('insideeeeeee')
         bot_members.append(Member(name))
+        print('passed bot_members')
+        print(len(bot_members))
 
 def get_member_by_name(member_list, name):
     """
