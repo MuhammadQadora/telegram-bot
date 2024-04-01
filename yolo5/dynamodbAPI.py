@@ -3,7 +3,7 @@ from sec import secret_keys
 
 class dynamodbAPI:
     def __init__(self):
-        self.client = boto3.client('dynamodb', region_name=secret_keys['region_name'])
+        self.client = boto3.client('dynamodb', region_name=secret_keys['REGION_NAME'])
         self.tableName = secret_keys['DYNAMO_TBL']
     
 
