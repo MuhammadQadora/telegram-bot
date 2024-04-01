@@ -16,6 +16,7 @@ import telebot.types
 
 TELEGRAM_APP_URL = SecretManager.secret_value['TELEGRAM_APP_URL']
 TELEGRAM_TOKEN = SecretManager.secret_value['TELEGRAM_TOKEN']
+SERVER_ENDPOINT = SecretManager.secret_value['SERVER_ENDPOINT']
 IMAGES_BUCKET = SecretManager.secret_value['BUCKET_NAME']
 GPT_KEY = SecretManager.secret_value['GPT_KEY']
 SQS_URL = SecretManager.secret_value['SQS_URL']

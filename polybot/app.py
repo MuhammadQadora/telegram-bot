@@ -4,11 +4,11 @@ import boto3
 from bot import Bot
 from loguru import logger
 from flask import Flask,request
-from bot import TELEGRAM_TOKEN,TELEGRAM_APP_URL,REGION_NAME,SNS_ARN,DYNAMO_TBL,Util
+from bot import TELEGRAM_TOKEN,REGION_NAME,SNS_ARN,SERVER_ENDPOINT,DYNAMO_TBL,Util
 
 sns_client = boto3.client('sns',region_name=REGION_NAME)
 dynamodb = boto3.client('dynamodb', region_name=REGION_NAME)
-server_endpoint = f"{TELEGRAM_APP_URL}/sns_update"
+server_endpoint = f"{SERVER_ENDPOINT}"
 
 app = Flask(__name__)
 
@@ -60,7 +60,7 @@ bot.getText()
 try:
     response = sns_client.subscribe(
         TopicArn=SNS_ARN,
-        Protocol='https',
+        Protocol='http',
         Endpoint=server_endpoint
     )
     subscription_arn = response['SubscriptionArn']
