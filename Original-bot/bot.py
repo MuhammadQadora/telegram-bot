@@ -10,7 +10,9 @@ from openAi import AI
 from sec import secret_keys
 import json
 from dynamodbAPI import dynamodbAPI
+from local_user_DB import *
 
+list_members = [{}]
 
 ##################
 token = secret_keys['TELEGRAM_TOKEN']
@@ -46,8 +48,6 @@ class Util:
             for key,val in class_count.items():
                 result += f"{key}: {val}\n"
             return result
-        
-
 
 class Bot:
     #Initiate connection with telegram
@@ -58,11 +58,7 @@ class Bot:
         self.bot.set_webhook(f"{url}/{token}",timeout=60,certificate=open('pub.cert','r'))
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
-        self.gpt4 = bool
-        self.yolo = bool
-        self.question = bool
-        self.textToImage = bool
-        
+
     #this function continuously checks for comming messages 
     def updater(self,request):
         update = telebot.types.Update.de_json(request)
@@ -71,16 +67,25 @@ class Bot:
     def startCommand(self):
         @self.bot.message_handler(commands=['start'])
         def start(msg):
+            global list_members
             self.bot.send_message(msg.chat.id, f"Hi there {msg.from_user.first_name}.\nWelcome to my bot detector, to see what this Bot can do use /help .")
+            add_member(list_members, msg.chat.id)
+
     #This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
     #then return answer to the user
     def getHelp(self):
         @self.bot.message_handler(commands=['help'])
         def help(msg):
-            self.gpt4 = False
-            self.yolo = False
-            self.question = False
-            self.textToImage = False
+            global list_members
+
+            if is_member_in_list_by_name(list_members, msg.chat.id):
+                member = get_member_by_name(list_members, msg.chat.id)
+                notify = member.notify
+                # Setting all notifications to False
+                for notification in Notify:
+                    notify[notification] = False
+            else:
+                add_member(list_members, msg.chat.id)
             markup = telebot.types.InlineKeyboardMarkup(row_width=2)
             gpt_4 = telebot.types.InlineKeyboardButton('Chat with gpt-4', callback_data='answer_gpt4')
             yolov5 = telebot.types.InlineKeyboardButton('Object Detection',callback_data='answer_yolov5')
@@ -92,7 +97,10 @@ class Bot:
     def photo_handler(self):
         @self.bot.message_handler(content_types=['photo'])
         def photo(msg):
-            if self.yolo == True and self.gpt4 == False and self.question == False:
+            global list_members
+            
+            n = get_notify_by_member_name(list_members,msg.chat.id)
+            if n[Notify.YOLO] == True and n[Notify.GPT4]==False and n[Notify.QUESTION]==False:
                 self.bot.send_message(msg.chat.id,"Processing your image, kindly wait.")
                 file_id = msg.photo[-1].file_id
                 file_info = self.bot.get_file(file_id)
@@ -118,16 +126,16 @@ class Bot:
                 except botocore.exceptions.ClientError as e:
                     logger.error(e)
                     return False
-                self.yolo = False
-            elif self.gpt4 == True and self.yolo ==False and self.question == False:
+                n[Notify.YOLO] = False
+            elif n[Notify.GPT4] == True and n[Notify.YOLO] == False and n[Notify] == False:
                 self.bot.send_message(msg.chat.id,"For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /help .")
-                self.gpt4 = False
-            elif self.question == True and self.yolo == False and self.gpt4 == False:
+                n[Notify.GPT4] = False
+            elif n[Notify.QUESTION] == True and n[Notify.YOLO] == False and n[Notify.GPT4] == False :
                 self.bot.send_message(msg.chat.id,"For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /help .")
-                self.question = False
-            elif self.textToImage == True:
+                n[Notify.QUESTION] = False
+            elif n[Notify.TEXT_TO_IMAGE] == True:
                 self.bot.send_message(msg.chat.id,"Its text to Image, not Image to text !!")
-                self.textToImage = False
+                n[Notify.TEXT_TO_IMAGE] = False
             else:
                 self.bot.send_message(msg.chat.id,"It seems you tried to upload a photo, if you want to detect objects got to /help\nand choose object detection")
 
@@ -136,72 +144,77 @@ class Bot:
         @self.bot.callback_query_handler(func=lambda call:True)
         def back(clk):
             if clk.message:
+                member = get_member_by_name(list_members, clk.message.chat.id)
+                notify = member.notify if member else {}  # If member doesn't exist, notify is an empty dict
                 if clk.data == 'answer_gpt4':
-                    self.gpt4 = True
-                    self.yolo = False
-                    self.question = False
-                    self.textToImage = False
+                    notify[Notify.GPT4] = True
+                    notify[Notify.YOLO] = False
+                    notify[Notify.QUESTION] = False
+                    notify[Notify.TEXT_TO_IMAGE] = False
                     self.bot.send_message(clk.message.chat.id, "You are now chatting with gpt-4,to quit use /quit")
                 elif clk.data == 'answer_yolov5':
-                    self.gpt4 = False
-                    self.yolo = True
-                    self.question = False
-                    self.textToImage = False
+                    notify[Notify.GPT4] = False
+                    notify[Notify.YOLO] = True
+                    notify[Notify.QUESTION] = False
+                    notify[Notify.TEXT_TO_IMAGE] = False
                     self.bot.send_message(clk.message.chat.id, "Please upload the desired photo")
                 elif clk.data == 'answer_question':
-                    self.gpt4 = False
-                    self.yolo = False
-                    self.textToImage = False
-                    self.question = True
+                    notify[Notify.GPT4] = False
+                    notify[Notify.YOLO] = False
+                    notify[Notify.TEXT_TO_IMAGE] = False
+                    notify[Notify.QUESTION] = True
                     self.bot.send_message(clk.message.chat.id,"I am listening, ask your question: ")
                 elif clk.data == 'answer_imageToText':
-                    self.gpt4 = False
-                    self.yolo = False
-                    self.textToImage = True
-                    self.question = False
+                    notify[Notify.GPT4] = False
+                    notify[Notify.YOLO] = False
+                    notify[Notify.TEXT_TO_IMAGE] = True
+                    notify[Notify.QUESTION] = False
                     self.bot.send_message(clk.message.chat.id,"Enter your text to image prompt: ")
 
     def text_handler(self):
         @self.bot.message_handler(content_types=['text'])
         def txt(msg):
-            if self.gpt4 == True:
-                logger.info(f"chat with gpt activated")
+            member = get_member_by_name(list_members, msg.chat.id)
+            notify = member.notify if member else {}  # If member doesn't exist, notify is an empty dict
+
+            if notify.get(Notify.GPT4):
+                logger.info(f"Chat with GPT-4 activated")
                 if msg.text == '/quit':
-                    self.gpt4 = False
+                    notify[Notify.GPT4] = False
                     return
                 dynamo_obj = dynamodbAPI()
-                #get the chat log
+                # Get the chat log
                 response = dynamo_obj.get_item(msg.chat.id)
-                if not 'Item' in response:
-                    template = dynamo_obj.init(msg.chat.id,'user',msg.text)
+                if 'Item' not in response:
+                    template = dynamo_obj.init(msg.chat.id, 'user', msg.text)
                     dynamo_obj.put_item(template)
-                
+
                 chat_history = dynamo_obj.conver_dynamodb_dictionary_to_regular(msg.chat.id)
-                chat_history.append({"role":"user","content":f"{msg.text}"})
+                chat_history.append({"role": "user", "content": f"{msg.text}"})
 
                 assistant_response = self.chatgpt.gpt(chat_history)
-                
-                chat_history.append({"role":"assistant","content": f"{assistant_response}"})
-                self.bot.send_message(msg.chat.id,f"{assistant_response}")
+
+                chat_history.append({"role": "assistant", "content": f"{assistant_response}"})
+                self.bot.send_message(msg.chat.id, f"{assistant_response}")
                 feed_to_dynamo_update = dynamo_obj.convert_regular_dictionary_to_dynamodb(chat_history)
-                Item = dynamo_obj.template(msg.chat.id,feed_to_dynamo_update)
+                Item = dynamo_obj.template(msg.chat.id, feed_to_dynamo_update)
                 dynamo_obj.put_item(Item)
-                logger.info("chat with gpt Deactivated")
-            elif self.yolo == True:
-                self.bot.send_message(msg.chat.id,"You must upload a photo not Text")
-            elif self.question == True:
-                logger.info(f"Ask a question Activated")
-                user_role = [{"role":"user","content":f"{msg.text}"}]
+                logger.info("Chat with GPT-4 Deactivated")
+            elif notify.get(Notify.YOLO):
+                self.bot.send_message(msg.chat.id, "You must upload a photo not text")
+            elif notify.get(Notify.QUESTION):
+                logger.info("Ask a question activated")
+                user_role = [{"role": "user", "content": f"{msg.text}"}]
                 ans = self.chatgpt.gpt(user_role)
-                self.bot.send_message(msg.chat.id,f"{ans}")
-                self.question = False
-                logger.info("Ask a question Deactivated")
-            elif self.textToImage == True:
-                logger.info(f"Text to image Activated")
-                self.bot.send_message(msg.chat.id,f"I am on it...it might take a minute\nBe patient")
+                self.bot.send_message(msg.chat.id, f"{ans}")
+                notify[Notify.QUESTION] = False
+                logger.info("Ask a question deactivated")
+            elif notify.get(Notify.TEXT_TO_IMAGE):
+                logger.info("Text to image activated")
+                self.bot.send_message(msg.chat.id, "I am on it...it might take a minute\nBe patient")
                 generated_url = self.chatgpt.text_to_image(msg.text)
-                self.bot.send_photo(msg.chat.id,photo=generated_url)
-                self.textToImage = False
-                logger.info("Text to image Deactivated")
+                self.bot.send_photo(msg.chat.id, photo=generated_url)
+                notify[Notify.TEXT_TO_IMAGE] = False
+                logger.info("Text to image deactivated")
             else:
-                self.bot.send_message(msg.chat.id,"Please refer to /help .")
+                self.bot.send_message(msg.chat.id, "Please refer to /help.")

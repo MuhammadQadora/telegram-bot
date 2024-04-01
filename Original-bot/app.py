@@ -1,17 +1,15 @@
 import json
-from flask import Flask,request
-import os
-app = Flask(__name__)
 import boto3
-from bot import Bot
 import loguru
+from bot import Bot
+from flask import Flask,request
 from bot import token,region_name, sns_topic_arn,server_endpoint,table,Util
 
+app = Flask(__name__)
 
 sns_client = boto3.client('sns',region_name=region_name)
 dynamodb = boto3.client('dynamodb', region_name=region_name)
 server_endpoint = server_endpoint
-
 
 @app.route('/')
 def statusCheck():
@@ -65,4 +63,5 @@ try:
     subscription_arn = response['SubscriptionArn']
 except Exception as e:
     loguru.logger.error(str(e))
+
 app.run(debug=True,host="0.0.0.0",port=5000)
