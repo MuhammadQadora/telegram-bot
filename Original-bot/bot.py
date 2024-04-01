@@ -20,7 +20,7 @@ queue_url = secret_keys['SQS_URL']
 region_name = secret_keys['REGION_NAME']
 sns_topic_arn = secret_keys['SNS_ARN']
 table = secret_keys['DYNAMO_TBL']
-
+server_endpoint = secret_keys['SERVER_ENDPOINT']
 #######################
 
 sqs_client = boto3.client('sqs',region_name=region_name)

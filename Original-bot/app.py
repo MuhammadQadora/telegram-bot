@@ -5,12 +5,12 @@ app = Flask(__name__)
 import boto3
 from bot import Bot
 import loguru
-from bot import token,region_name, sns_topic_arn, url,table,Util
+from bot import token,region_name, sns_topic_arn,server_endpoint,table,Util
 
 
 sns_client = boto3.client('sns',region_name=region_name)
 dynamodb = boto3.client('dynamodb', region_name=region_name)
-server_endpoint = f"{url}/sns_update"
+server_endpoint = server_endpoint
 
 
 @app.route('/')
@@ -59,7 +59,7 @@ bot.photo_handler()
 try:
     response = sns_client.subscribe(
         TopicArn=sns_topic_arn,
-        Protocol='https',
+        Protocol='http',
         Endpoint=server_endpoint
     )
     subscription_arn = response['SubscriptionArn']
