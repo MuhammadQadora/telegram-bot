@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 def get_secret():
 
     try:
-        secret_name = "fnaaraniSecrets_PolyBot"
+        # secret_name = "fnaaraniSecrets_PolyBot"
+        secret_name = "polybotSecretsMQ"
         region_name='us-east-1'
 
         # Create a Secrets Manager client

@@ -12,9 +12,11 @@ import botocore.exceptions
 import SecretManager
 from dynamodbAPI import dynamodbAPI
 import telebot.types
+from local_user_DB import *
 
+list_members = []
 
-TELEGRAM_APP_URL = SecretManager.secret_value['TELEGRAM_APP_URL']
+TELEGRAM_APP_URL = SecretManager.secret_value['TELEGRAM_APP_URL_BATMAN']
 TELEGRAM_TOKEN = SecretManager.secret_value['TELEGRAM_TOKEN']
 SERVER_ENDPOINT = SecretManager.secret_value['SERVER_ENDPOINT']
 IMAGES_BUCKET = SecretManager.secret_value['BUCKET_NAME']
@@ -23,12 +25,6 @@ SQS_URL = SecretManager.secret_value['SQS_URL']
 REGION_NAME = SecretManager.secret_value['REGION_NAME']
 SNS_ARN = SecretManager.secret_value['SNS_ARN']
 DYNAMO_TBL = SecretManager.secret_value['DYNAMO_TBL']
-
-isPhoto = bool
-sentPhoto = bool
-isGPT = bool
-chatWithGPT = bool
-textToIMG = bool
 
 client = OpenAI(api_key=GPT_KEY)
 sqs_client = boto3.client('sqs', region_name=REGION_NAME)
@@ -136,11 +132,6 @@ class Bot:
         self.bot.set_webhook(
             url=f"{TELEGRAM_APP_URL}/{TELEGRAM_TOKEN}", timeout=60, certificate=open('PublicKey.pem','r'))
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
-        self.isPhoto = False
-        self.sentPhoto = False
-        self.isGPT = False
-        self.chatWithGPT = False
-        self.textToIMG = False
 
     # this function continuously checks for comming messages
     def updater(self, request):
@@ -151,20 +142,25 @@ class Bot:
     def startCommand(self):
         @self.bot.message_handler(commands=['start'])
         def start(msg):
+            global list_members
             self.bot.send_message(msg.chat.id, f"☣️ 𝕎𝕖𝕝𝕔𝕠𝕞𝕖 𝕋𝕠 𝔹𝕒𝕥𝕞𝕒𝕟 𝔹𝕠𝕥 ☣️\nℍ𝕖𝕝𝕝𝕠, {msg.from_user.first_name} 👋🏻\nℍ𝕠𝕨 𝕔𝕒𝕟 𝕀 𝕙𝕖𝕝𝕡 𝕪𝕠𝕦?")
+            add_member(list_members, msg.chat.id)
 
     # This function responds with a greeting when the user uses /help
     def getHelp(self):
         @self.bot.message_handler(commands=['help'])
         def help(msg):
-            self.isGPT = False
-            self.isPhoto = False
-            self.sentPhoto = False
-            self.chatWithGPT = False
-            self.textToIMG = False
-            # self.bot.send_message(
-            #     msg.chat.id, f"ℂ𝕦𝕣𝕣𝕖𝕟𝕥𝕝𝕪 𝕥𝕙𝕚𝕤 𝕓𝕠𝕥 𝕚𝕤 𝕔𝕒𝕡𝕒𝕓𝕝𝕖 𝕠𝕗 𝕣𝕖𝕔𝕖𝕚𝕧𝕚𝕟𝕘 𝕒 𝕡𝕚𝕔𝕥𝕦𝕣𝕖 𝕒𝕟𝕕 𝕚𝕕𝕖𝕟𝕥𝕚𝕗𝕪𝕚𝕟𝕘 𝕠𝕓𝕛𝕖𝕔𝕥𝕤.\n𝕊𝕠𝕠𝕟 𝕨𝕚𝕝𝕝 𝕓𝕖 𝕔𝕒𝕡𝕒𝕓𝕝𝕖 𝕠𝕗 𝕙𝕒𝕟𝕕𝕝𝕚𝕟𝕘 𝕧𝕚𝕕𝕖𝕠𝕤 𝕒𝕟𝕕 𝕨𝕚𝕝𝕝 𝕒𝕝𝕝𝕠𝕨 𝔾ℙ𝕋-𝟜 𝕔𝕠𝕞𝕞𝕦𝕟𝕚𝕔𝕒𝕥𝕚𝕠𝕟.")
-
+            global list_members
+            print_member_params(list_members)
+            if is_member_in_list_by_name(list_members, msg.chat.id) == True:
+                member = get_member_by_name(list_members, msg.chat.id)
+                notify = member.notify
+                # Setting all notifications to False
+                for notification in Notify:
+                    notify[notification] = False
+            else:
+                add_member(list_members, msg.chat.id)
+            
             # Creating an inline keyboard with two buttons
             markup = types.InlineKeyboardMarkup()
             markup.row_width = 2
@@ -186,32 +182,36 @@ class Bot:
     def getOpions(self):
         @self.bot.callback_query_handler(func=lambda call: True)
         def callback_query(call):
+            member = get_member_by_name(list_members, call.message.chat.id)
+                # If member doesn't exist, notify is an empty dict
+            notify = member.notify if member else {}
+            
             if call.data == 'idnObj':
-                self.isPhoto = True
-                self.isGPT = False
-                self.chatWithGPT = False
-                self.textToIMG = False
+                notify[Notify.ISPHOTO] = True
+                notify[Notify.ISGPT] = False
+                notify[Notify.CHATWITHGPT] = False
+                notify[Notify.TEXTTOIMAGE] = False
                 self.bot.send_message(
                     call.message.chat.id, "🫣ℙ𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 𝕒 𝕡𝕙𝕠𝕥𝕠🫣")
             elif call.data == 'gptQuest':
-                self.isGPT = True
-                self.chatWithGPT = False
-                self.isPhoto = False
-                self.textToIMG = False
+                notify[Notify.ISGPT] = True
+                notify[Notify.CHATWITHGPT] = False
+                notify[Notify.ISPHOTO] = False
+                notify[Notify.TEXTTOIMAGE] = False
                 self.bot.send_message(
                     call.message.chat.id, "👂𝕎𝕙𝕒𝕥 𝕪𝕠𝕦 𝕨𝕚𝕤𝕙 𝕥𝕠 𝕣𝕖𝕢𝕦𝕖𝕤𝕥👂")
             elif call.data == 'gptChat':
-                self.isGPT = True
-                self.chatWithGPT = True
-                self.isPhoto = False
-                self.textToIMG = False
+                notify[Notify.ISGPT] = True
+                notify[Notify.CHATWITHGPT] = True
+                notify[Notify.ISPHOTO] = False
+                notify[Notify.TEXTTOIMAGE] = False
                 self.bot.send_message(
                     call.message.chat.id, f"ℕ𝕠𝕨 𝕪𝕠𝕦 𝕦𝕤𝕖𝕤 𝕒 ℂ𝕙𝕒𝕥 𝕎𝕚𝕥𝕙 𝔾ℙ𝕋-𝟜 𝕄𝕠𝕕𝕖\n𝕋𝕠 𝕖𝕟𝕕 𝕚𝕥 𝕡𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 /closegpt")
             elif call.data == 'genPic':
-                self.textToIMG = True
-                self.isGPT = False
-                self.chatWithGPT = False
-                self.isPhoto = False
+                notify[Notify.TEXTTOIMAGE] = True
+                notify[Notify.ISGPT] = False
+                notify[Notify.CHATWITHGPT] = False
+                notify[Notify.ISPHOTO] = False
                 self.bot.send_message(
                     call.message.chat.id, f"🧐𝔾𝕚𝕧𝕖 𝕞𝕖 𝕒 𝕕𝕖𝕤𝕔𝕣𝕚𝕡𝕥𝕚𝕠𝕟 𝕠𝕗 𝕥𝕙𝕖 𝕡𝕙𝕠𝕥𝕠🧐")
 
@@ -225,8 +225,11 @@ class Bot:
     def getCloseGPT(self):
         @self.bot.message_handler(commands=['closegpt'])
         def text(msg):
-            self.chatWithGPT = False
-            self.isGPT = False
+            member = get_member_by_name(list_members, msg.message.chat.id)
+                # If member doesn't exist, notify is an empty dict
+            notify = member.notify if member else {}
+            notify[Notify.ISGPT] = False
+            notify[Notify.CHATWITHGPT] = False
             self.bot.send_message(msg.chat.id, f"👻🦇🤖🦇👻")
 
     # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
@@ -234,8 +237,11 @@ class Bot:
     def getPhoto(self):
         @self.bot.message_handler(content_types=['photo'])
         def photo(msg):
-            self.sentPhoto = True
-            if (self.isPhoto == True and self.sentPhoto == True):
+            member = get_member_by_name(list_members, msg.message.chat.id)
+                # If member doesn't exist, notify is an empty dict
+            notify = member.notify if member else {}
+            notify[Notify.SENTPHOTO] = True
+            if notify[Notify.ISPHOTO] and notify[Notify.SENTPHOTO] == True:
                 self.bot.send_message(
                     msg.chat.id, f"ℙ𝕝𝕖𝕒𝕤𝕖 𝕎𝕒𝕚𝕥..😶‍🌫️𝕀'𝕞 𝕎𝕠𝕣𝕜𝕚𝕟𝕘 𝕆𝕟 𝕀𝕥😶‍🌫️")
                 file_id = msg.photo[-1].file_id
@@ -272,7 +278,7 @@ class Bot:
                         msg.chat.id, f"⛔️𝕀𝕥 𝕤𝕖𝕖𝕞𝕤 𝕥𝕙𝕒𝕥 𝕥𝕙𝕖 𝕤𝕖𝕣𝕧𝕖𝕣 𝕚𝕤 𝕟𝕠𝕥 𝕨𝕠𝕣𝕜𝕚𝕟𝕘 𝕡𝕣𝕠𝕡𝕖𝕣𝕝𝕪⛔️")
                     return False
 
-                self.isPhoto = False
+                notify[Notify.ISPHOTO] = False
             else:
                 self.bot.send_message(
                     msg.chat.id, f"👻𝕐𝕠𝕦 𝕞𝕒𝕪 𝕦𝕤𝕖 /help 𝕥𝕠 𝕤𝕖𝕖 𝕞𝕪 𝕥𝕒𝕝𝕖𝕟𝕥𝕤👻")
@@ -288,21 +294,24 @@ class Bot:
     def getText(self):
         @self.bot.message_handler(content_types=['text'])
         def text(msg):
-            if self.isGPT:
-                if not self.chatWithGPT:
+            member = get_member_by_name(list_members, msg.message.chat.id)
+                # If member doesn't exist, notify is an empty dict
+            notify = member.notify if member else {}
+            if notify[Notify.ISGPT] == True:
+                if notify[Notify.CHATWITHGPT] == False:
                     self.bot.send_message(
                         msg.chat.id, f"👾𝕁𝕦𝕤𝕥 𝕒 𝕞𝕠𝕞𝕖𝕟𝕥, 𝕀'𝕞 𝕠𝕟 𝕚𝕥👾")
                     Util.SendMessageForGPT(self, msg)
-                    self.isGPT = False
-                    self.isPhoto = False
-                    self.sentPhoto = False
+                    notify[Notify.ISGPT] = False
+                    notify[Notify.ISPHOTO] = False
+                    notify[Notify.SENTPHOTO] = False
                 else:
                     Util.SendMessageForGPT(self, msg, True)
             elif self.isPhoto and not self.sentPhoto:
                 self.bot.send_message(msg.chat.id, "🫣ℙ𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 𝕒 𝕡𝕙𝕠𝕥𝕠🫣")
             elif self.textToIMG:
                 Util.GenerateIMG(self, msg)
-                self.textToIMG = False
+                notify[Notify.TEXTTOIMAGE] = False
             else:
                 self.bot.send_message(
                     msg.chat.id, f"𝕐𝕠𝕦 𝕊𝕖𝕟𝕥 𝔸 𝕋𝕖𝕩𝕥 𝕄𝕖𝕤𝕤𝕒𝕘𝕖:\n{msg.text}\n👻𝕐𝕠𝕦 𝕞𝕒𝕪 𝕦𝕤𝕖 /help 𝕥𝕠 𝕤𝕖𝕖 𝕞𝕪 𝕥𝕒𝕝𝕖𝕟𝕥𝕤👻")
