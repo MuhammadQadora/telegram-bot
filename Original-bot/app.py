@@ -57,7 +57,7 @@ bot.photo_handler()
 try:
     response = sns_client.subscribe(
         TopicArn=sns_topic_arn,
-        Protocol='https',
+        Protocol='http',
         Endpoint=server_endpoint
     )
     subscription_arn = response['SubscriptionArn']

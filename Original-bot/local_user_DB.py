@@ -22,43 +22,33 @@ class Member:
 
 
 def is_member_in_list_by_name(bot_members, name):
-    """
-    Check if a member object with a given name exists in the list.
-    """
-    result = [i for i in bot_members if name in i]
-    logger.info(result)
-    if result:
-        return True
-    else:
-        return False
+    #Check if a member object with a given name exists in the list.
+    return any(member.name == name for member in bot_members)
 
 def add_member(bot_members, name):
-    """
-    Add a new member to the list if it doesn't already exist.
-    """
-    res = is_member_in_list_by_name(bot_members, name)
-    logger.info(res)
+    #Add a new member to the list if it doesn't already exist.
     if is_member_in_list_by_name(bot_members, name) == False:
-        print('insideeeeeee')
         bot_members.append(Member(name))
-        print('passed bot_members')
-        print(len(bot_members))
 
 def get_member_by_name(member_list, name):
-    """
-    Get the first Member object from the list with the given name.5
-    """
+    #Get the first Member object from the list with the given name.5
     for member in member_list:
         if member.name == name:
             return member
     return None  # Return None if no member with the specified name is found
 
 def get_notify_by_member_name(member_list, name):
-    """
-    Get the first Member object from the list with the given name.5
-    """
+    #Get the first Member object from the list with the given name.5
     for member in member_list:
         if member.name == name:
             return member.notify
     return None  # Return None if no member with the specified name is found
 
+def print_member_params(member_list):
+    for member in member_list:
+        if isinstance(member, Member):
+            print(f"Name: {member.name}")
+            print("Notify:")
+            for key, value in member.notify.items():
+                print(f"    {key}: {value}")
+            print()
