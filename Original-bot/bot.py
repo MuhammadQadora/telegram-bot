@@ -16,13 +16,13 @@ list_members = []
 
 ##################
 token = secret_keys['TELEGRAM_TOKEN']
-url = secret_keys['TELEGRAM_APP_URL']
+url = os.environ['TELEGRAM_APP_URL']
 bucket_name = secret_keys['BUCKET_NAME']
-queue_url = secret_keys['SQS_URL']
-region_name = secret_keys['REGION_NAME']
-sns_topic_arn = secret_keys['SNS_ARN']
-table = secret_keys['DYNAMO_TBL']
-server_endpoint = secret_keys['SERVER_ENDPOINT']
+queue_url = os.environ['SQS_URL']
+region_name = os.environ['REGION_NAME']
+sns_topic_arn = os.environ['SNS_ARN']
+table = os.environ['DYNAMO_TBL']
+server_endpoint = os.environ['SERVER_ENDPOINT']
 #######################
 
 sqs_client = boto3.client('sqs', region_name=region_name)
@@ -59,7 +59,7 @@ class Bot:
         self.bot = telebot.TeleBot(token=token)
         self.bot.remove_webhook()
         time.sleep(1)
-        self.bot.set_webhook(f"{url}/{token}", timeout=60, certificate=open('pub.cert','r'))
+        self.bot.set_webhook(f"{url}/{token}", timeout=60)
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
 

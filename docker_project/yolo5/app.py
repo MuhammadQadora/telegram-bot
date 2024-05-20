@@ -14,9 +14,9 @@ from sec import secret_keys
 from bson import json_util
 from dynamodbAPI import dynamodbAPI
 images_bucket = secret_keys['BUCKET_NAME']
-region_name= secret_keys['REGION_NAME']
-queue_url = secret_keys['SQS_URL']
-sns_topic_arn = secret_keys['SNS_ARN']
+region_name= os.environ['REGION_NAME']
+queue_url = os.environ['SQS_URL']
+sns_topic_arn = os.environ['SNS_ARN']
 
 
 

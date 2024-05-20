@@ -1,12 +1,12 @@
 import boto3
 from sec import secret_keys
-
+import os
 
 class dynamodbAPI:
     def __init__(self):
         self.client = boto3.client(
-            'dynamodb', region_name=secret_keys['REGION_NAME'])
-        self.tableName = secret_keys['GPT_TBL']
+            'dynamodb', region_name=os.environ['REGION_NAME'])
+        self.tableName = os.environ['GPT_TBL']
 
     def init(self, msg_chat_id, role, msg_text):
         Item = {
