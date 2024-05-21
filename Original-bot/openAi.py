@@ -4,8 +4,8 @@ import openai
 from loguru import logger
 from io import BytesIO
 import requests
-
-openai_key = os.environ['openai_key']
+from sec import secret_keys
+openai_key = secret_keys['openai_key']
 
 class AI():
     def __init__(self):
