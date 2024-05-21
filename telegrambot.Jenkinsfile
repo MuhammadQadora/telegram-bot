@@ -24,7 +24,7 @@ pipeline {
 
      causeString: 'Triggered on $ref',
 
-     token: 'telegram',
+     token: '1111',
      tokenCredentialId: '',
 
      printContributedVariables: true,
