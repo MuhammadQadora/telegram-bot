@@ -63,6 +63,19 @@ pipeline {
         }
       }
     }
+    stage('Docker Log-in'){
+      environment {
+        creds = credentials('dockerlogin')
+      }
+      steps {
+        script {
+          sh """
+            echo ${env.creds_PSW}| docker login --username ${env.creds_USR} --password-stdin
+            echo 'Successfuly logged in to docker'
+          """
+        }
+      }
+    }
   }
   post {
     always {
