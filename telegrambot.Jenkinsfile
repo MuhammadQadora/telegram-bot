@@ -1,16 +1,17 @@
 pipeline {
+  environment {
+    c = credentials('dockerlogin')
+    webhook_token = credentials('webhook-token')
+  }
   options {
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '5'))
     ansiColor('xterm')
   }
-  parameters {
-    string(name: 'region', defaultValue: 'ap-northeast-1', description: 'The region to deploy to')
-  }
   agent {
     docker {
       label 'linux'
-      image 'muhammadqadora/jenkins-inbound-agent'
+      image 'muhammadqadora/jenkins-inbound-agent:latest'
       args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
@@ -22,7 +23,7 @@ pipeline {
         [key: 'modifiedFile', value: '$.commits[0].modified[0]']
       ],
       causeString: 'Triggered on $ref',
-      token: '1111',
+      token: "${env.webhook_token}",
       tokenCredentialId: '',
 
       printContributedVariables: true,
@@ -32,12 +33,9 @@ pipeline {
 
       shouldNotFlatten: false,
 
-      regexpFilterText: '$ref $modifiedFile',
-      regexpFilterExpression: 'refs/heads/main ^Original.*'
+      regexpFilterText: '$ref',
+      regexpFilterExpression: 'refs/heads/main ^Original-bot/*'
     )
-  }
-  environment {
-    TF_VAR_ec2_public_key = credentials('ec2-public-key')
   }
   stages {
     stage('Print Params') {
@@ -46,11 +44,10 @@ pipeline {
       }
       steps {
         script {
-          echo "${env.ref}"
           echo "=====================================${STAGE_NAME}====================================="
-          echo "=====================================${BUILD_NUMBER}====================================="
-          echo "=====================================${env.pusher}====================================="
-          echo "=====================================${params.region}====================================="
+          echo "Build Number: ${BUILD_NUMBER}"
+          echo "Pusher: ${env.pusher}"
+          echo "Region: ${params.region}"
         }
       }
     }
@@ -58,34 +55,63 @@ pipeline {
       steps {
         script {
           echo "=====================================${STAGE_NAME}====================================="
-          checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/terraform-bot-mf']])
+          checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
           echo 'Checked out from GitHub...'
         }
       }
     }
-    stage('Docker Log-in'){
-      environment {
-        creds = credentials('dockerlogin')
-      }
+    stage('Docker Login') {
       steps {
         script {
           sh """
-            echo ${env.creds_PSW}| docker login --username ${env.creds_USR} --password-stdin
-            echo 'Successfuly logged in to docker'
+            echo ${env.c_PSW} | docker login --username ${c_USR} --password-stdin
+            echo "Success!"
           """
         }
+      }
+    }
+    stage('Install requirements') {
+      steps {
+        script {
+          sh """
+            apt install python3.11-venv -y
+            python3 -m venv app
+            . ./app/bin/activate
+            pip install --no-cache-dir -r Original-bot/requirements.txt
+            deactivate
+            echo Success!
+          """
+        }
+      }
+    }
+    stage('Docker Build')  {
+      steps {
+        script {
+          sh """
+            docker build Original-bot \
+            -t muhammadqadora/telegrambot-aws-terraform:${env.BUILD_NUMBER} -t muhammadqadora/telegrambot-aws-terraform:latest -f Original-bot/Dockerfile 
+            docker push muhammadqadora/telegrambot-aws-terraform:latest
+            docker push muhammadqadora/telegrambot-aws-terraform:${env.BUILD_NUMBER}
+          """
+        }
+      }
+    }
+    stage('Trigger Deployment Pipeline') {
+      steps {
+        build 'telegram-bot-deployment'
       }
     }
   }
   post {
     always {
+      cleanWs()
       emailext(
         attachLog: true, 
         body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
-Check console output at $BUILD_URL to view the results.''', 
+              Check console output at $BUILD_URL to view the results.''', 
         subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!', 
         to: 'memomq70@gmail.com, firas.narani.1999@outlook.com'
       )
     }
-  }
+  } 
 }
