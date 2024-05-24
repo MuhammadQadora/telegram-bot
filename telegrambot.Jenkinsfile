@@ -96,15 +96,11 @@ pipeline {
         }
       }
     }
-    stage('Trigger Deployment Pipeline') {
-      steps {
-        build 'telegram-bot-deployment'
-      }
-    }
   }
   post {
     always {
       cleanWs()
+      build 'telegram-bot-deployment'
       emailext(
         attachLog: true, 
         body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
