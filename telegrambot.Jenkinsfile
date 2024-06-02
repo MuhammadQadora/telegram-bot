@@ -1,7 +1,6 @@
 pipeline {
   environment {
     c = credentials('dockerlogin')
-    webhook_token = credentials('webhook-token')
   }
   options {
     timestamps()
@@ -23,8 +22,8 @@ pipeline {
         [key: 'modifiedFile', value: '$.commits[0].modified[0]']
       ],
       causeString: 'Triggered on $ref',
-      token: "${env.webhook_token}",
-      tokenCredentialId: '',
+      token: '',
+      tokenCredentialId: 'webhook-token',
 
       printContributedVariables: true,
       printPostContent: true,
@@ -33,8 +32,8 @@ pipeline {
 
       shouldNotFlatten: false,
 
-      regexpFilterText: '$ref',
-      regexpFilterExpression: 'refs/heads/main ^Original-bot/*'
+      regexpFilterText: '$ref $modifiedFile',
+      regexpFilterExpression: 'refs/heads/main Or.*'
     )
   }
   stages {
@@ -63,7 +62,9 @@ pipeline {
     stage('Docker Login') {
       steps {
         script {
+          println("=====================================${STAGE_NAME}=====================================")
           sh """
+            #!/bin/bash
             echo ${env.c_PSW} | docker login --username ${c_USR} --password-stdin
             echo "Success!"
           """
@@ -73,7 +74,9 @@ pipeline {
     stage('Install requirements') {
       steps {
         script {
+          println("=====================================${STAGE_NAME}=====================================")
           sh """
+            #!/bin/bash
             apt install python3.11-venv -y
             python3 -m venv app
             . ./app/bin/activate
@@ -87,7 +90,9 @@ pipeline {
     stage('Docker Build')  {
       steps {
         script {
+          println("=====================================${STAGE_NAME}=====================================")
           sh """
+            #!/bin/bash
             docker build Original-bot \
             -t muhammadqadora/telegrambot-aws-terraform:${env.BUILD_NUMBER} -t muhammadqadora/telegrambot-aws-terraform:latest -f Original-bot/Dockerfile 
             docker push muhammadqadora/telegrambot-aws-terraform:latest
@@ -96,11 +101,16 @@ pipeline {
         }
       }
     }
+    stage('Trigger Deployment Pipeline') {
+      steps {
+        println("=====================================${STAGE_NAME}=====================================")
+        build wait: false, job: 'telegram-bot-deployment'
+      }
+    }
   }
   post {
     always {
       cleanWs()
-      build 'telegram-bot-deployment'
       emailext(
         attachLog: true, 
         body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
