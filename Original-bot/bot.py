@@ -58,7 +58,7 @@ class Bot:
     def __init__(self):
         self.bot = telebot.TeleBot(token=token)
         self.bot.remove_webhook()
-        time.sleep(1)
+        time.sleep(5)
         self.bot.set_webhook(f"{url}/{token}", timeout=60)
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
