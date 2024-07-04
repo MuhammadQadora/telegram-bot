@@ -87,18 +87,14 @@ spec:
     }
     stage('pip install'){
       steps{
+        withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]){
         container('python'){
-          sh 'pip install -r Original-bot/requirements.txt'
-        }
-      }
-    }
-    stage('snyk test'){
-      steps{
-        withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]) {
-        script {
           sh '''
           #!/bin/bash
-          which python3
+          apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
+          chmod +x ./snyk
+          mv ./snyk /usr/local/bin/
+          pip install -r Original-bot/requirements.txt
           snyk test --package-manager=pip --command=python3.10 --file=./Original-bot/requirements.txt
           '''
           }
