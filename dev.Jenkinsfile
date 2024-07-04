@@ -76,7 +76,7 @@ spec:
       steps{
         withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
           container('sonar'){
-            sh 'sonar-scanner --version'
+            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot'
           }
         }
       }
