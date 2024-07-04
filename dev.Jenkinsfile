@@ -9,6 +9,17 @@ pipeline {
   }
   agent {
     kubernetes {
+      yaml '''
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sonar
+spec:
+  containers:
+  - name: sonar
+    image: sonarsource/sonar-scanner-cli
+    command: ['sleep','infinity']
+'''
     }
   }
   triggers {
@@ -64,11 +75,8 @@ pipeline {
     stage('scan with sonarqube'){
       steps{
         withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
-          script {
-            sh '''
-              #!/bin/bash
-              sonar-scanner --version
-            '''
+          container('sonar'){
+            sh 'sonar-scanner --version'
           }
         }
       }
