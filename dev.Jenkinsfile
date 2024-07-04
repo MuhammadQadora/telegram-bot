@@ -85,7 +85,7 @@ spec:
     stage('snyk test'){
       steps{
         script {
-          snykSecurity projectName: 'Original-bot', severity: 'critical', snykInstallation: 'snyk@latest', snykTokenId: 'token-snyk'
+          snykSecurity projectName: 'Original-bot', severity: 'critical', snykInstallation: 'snyk@latest', snykTokenId: 'token-snyk', targetFile: './Original-bot/*'
           //sh 'snyk test --json --severity-threshold=critical --file=./Original-bot --project-name=Original-bot'
         }
       }
