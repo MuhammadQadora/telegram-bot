@@ -86,7 +86,11 @@ spec:
       steps{
         withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]) {
         script {
-          'cd Original-bot;snyk test --json --severity-threshold=critical '
+          sh '''
+          #!/bin/bash
+          pip --no-cache-dir ./Original-bot/requirements.txt
+          snyk test --package-manager=pip --json --severity-threshold=critical --file=./Original-bot/requirements.txt
+          '''
           }
         }
       }
