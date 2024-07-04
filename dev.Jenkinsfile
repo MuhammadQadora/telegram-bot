@@ -19,6 +19,9 @@ spec:
   - name: sonar
     image: sonarsource/sonar-scanner-cli
     command: ['sleep','infinity']
+  - name: python
+    image: python
+    command: ['sleep','infinity']
 '''
     }
   }
@@ -82,13 +85,19 @@ spec:
         }
       }
     }
+    stage('pip install'){
+      steps{
+        container('python'){
+          sh 'pip install -r Original-bot/requirements.txt'
+        }
+      }
+    }
     stage('snyk test'){
       steps{
         withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]) {
         script {
           sh '''
           #!/bin/bash
-          pip --no-cache-dir ./Original-bot/requirements.txt
           snyk test --package-manager=pip --json --severity-threshold=critical --file=./Original-bot/requirements.txt
           '''
           }
