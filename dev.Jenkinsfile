@@ -98,7 +98,7 @@ spec:
         script {
           sh '''
           #!/bin/bash
-          snyk test --package-manager=pip --json --severity-threshold=critical
+          snyk test --package-manager=pip --json --severity-threshold=critical --path=$PWD/Original-bot/requirements.txt
           '''
           }
         }
