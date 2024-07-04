@@ -61,6 +61,18 @@ pipeline {
         echo "some tests ran and passed ...."
       }
     }
+    stage('scan with sonarqube'){
+      steps{
+        withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
+          script {
+            sh '''
+              #!/bin/bash
+              sonar-scanner --version
+            '''
+          }
+        }
+      }
+    }
   }
   post {
     always {
