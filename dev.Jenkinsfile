@@ -98,7 +98,8 @@ spec:
         script {
           sh '''
           #!/bin/bash
-          snyk test --package-manager=pip --command=python3 --file=./Original-bot/requirements.txt
+          which python3
+          snyk test --package-manager=pip --command=python3.10 --file=./Original-bot/requirements.txt
           '''
           }
         }
