@@ -76,8 +76,16 @@ spec:
       steps{
         withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
           container('sonar'){
+            echo "=====================================${STAGE_NAME}====================================="
             sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot'
           }
+        }
+      }
+    }
+    stage('snyk test'){
+      steps{
+        script {
+          snykSecurity projectName: 'Original-bot', severity: 'critical', snykInstallation: 'snyk@latest', snykTokenId: 'token-snyk', targetFile: './Original-bot'
         }
       }
     }
