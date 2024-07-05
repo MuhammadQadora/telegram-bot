@@ -59,7 +59,7 @@ spec:
 
       shouldNotFlatten: false,
 
-      regexpFilterText: '$ref $modifiedFile',
+      regexpFilterText: '$ref',
       regexpFilterExpression: 'refs/heads/dev'
     )
   }
