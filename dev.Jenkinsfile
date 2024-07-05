@@ -1,7 +1,7 @@
 pipeline {
   options {
     timestamps()
-    buildDiscarder(logRotator(numToKeepStr: '5'))
+    buildDiscarder(logRotator(numToKeepStr: '2'))
     ansiColor('xterm')
   }
   agent {
@@ -124,16 +124,20 @@ spec:
           echo "=====================================${STAGE_NAME}====================================="
           sh '''#!/busybox/sh
             cd Original-bot
-            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
+            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER
+            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest 
           '''
-          // sh '''#!/busybox/sh
-          //   /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
-          // '''
          } 
       }
     }
   }
   post {
+    failure {
+      publishChecks actions: [[description: 'The build failed', identifier: '', label: 'bot-build-dev-status']], conclusion: 'FAILURE', name: 'devBuildCheck', title: 'devBuildCheck'
+    }
+    success {
+      publishChecks actions: [[description: 'The build was successful ', identifier: '', label: 'buildstatus']], name: 'dev-bot-build-status', title: 'dev-bot-build-status'
+    }
     always {
       echo "Archiving artifacts..."
       archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
