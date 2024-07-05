@@ -59,8 +59,8 @@ spec:
 
       shouldNotFlatten: false,
 
-      regexpFilterText: '$ref',
-      regexpFilterExpression: 'refs/heads/dev'
+      regexpFilterText: '$ref $modifiedFile',
+      regexpFilterExpression: 'refs/heads/dev Or.*'
     )
   }
   stages {
@@ -133,10 +133,10 @@ spec:
   }
   post {
     failure {
-      publishChecks actions: [[description: 'The build failed', identifier: '', label: 'bot-build-dev-status']], conclusion: 'FAILURE', name: 'devBuildCheck', title: 'devBuildCheck'
+      publishChecks conclusion: 'FAILURE', detailsURL: '$BUILD_URL', name: 'dev-bot-build-status', title: 'dev-bot-build-status'
     }
     success {
-      publishChecks actions: [[description: 'The build was successful ', identifier: '', label: 'buildstatus']], name: 'dev-bot-build-status', title: 'dev-bot-build-status'
+     publishChecks detailsURL: '$BUILD_URL', name: 'dev-bot-build-status', title: 'dev-bot-build-status'
     }
     always {
       echo "Archiving artifacts..."
