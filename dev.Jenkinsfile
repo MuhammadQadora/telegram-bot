@@ -122,10 +122,10 @@ spec:
       steps{
          container(name: 'kaniko', shell: '/busybox/sh'){
           sh '''#!/busybox/sh
-            /kaniko/executor --context Original-bot/Dockerfile --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
+            /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
           '''
           sh '''#!/busybox/sh
-            /kaniko/executor --context Original-bot/Dockerfile --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
+            /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
           '''
          } 
       }
