@@ -60,7 +60,7 @@ spec:
       shouldNotFlatten: false,
 
       regexpFilterText: '$ref $modifiedFile',
-      regexpFilterExpression: 'refs/heads/main Or.*'
+      regexpFilterExpression: 'refs/heads/dev Or.*'
     )
   }
   stages {
