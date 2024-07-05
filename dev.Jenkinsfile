@@ -96,7 +96,7 @@ spec:
         withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
           container('sonar'){
             echo "=====================================${STAGE_NAME}====================================="
-            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 1> sonarResults.txt'
+            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
           }
         }
       }
@@ -112,31 +112,30 @@ spec:
           chmod +x ./snyk
           mv ./snyk /usr/local/bin/
           pip install -r Original-bot/requirements.txt
-          snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 1> snykResults.txt
+          snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
           '''
           }
         }
       }
     }
-    // stage('Build Docker Image and push to ECR'){
-    //   steps{
-    //      container(name: 'kaniko', shell: '/busybox/sh'){
-    //       echo "=====================================${STAGE_NAME}====================================="
-    //       sh '''#!/busybox/sh
-    //         /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
-    //       '''
-    //       sh '''#!/busybox/sh
-    //         /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
-    //       '''
-    //      } 
-    //   }
-    // }
+    stage('Build Docker Image and push to ECR'){
+      steps{
+         container(name: 'kaniko', shell: '/busybox/sh'){
+          echo "=====================================${STAGE_NAME}====================================="
+          sh '''#!/busybox/sh
+            /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
+          '''
+          sh '''#!/busybox/sh
+            /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
+          '''
+         } 
+      }
+    }
   }
   post {
     always {
       echo "Archiving artifacts..."
-      archiveArtifacts allowEmptyArchive: true, artifacts: '**.txt', followSymlinks: false, onlyIfSuccessful: true
-      recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [sonarQube(pattern: '**/sonarResults.txt', reportEncoding: 'UTF-8', skipSymbolicLinks: true)]
+      archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
       cleanWs()
       emailext(
         attachLog: true, 
