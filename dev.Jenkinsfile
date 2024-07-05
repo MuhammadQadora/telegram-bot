@@ -1,7 +1,4 @@
 pipeline {
-  environment {
-    c = credentials('dockerlogin')
-  }
   options {
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '5'))
@@ -22,6 +19,25 @@ spec:
   - name: python
     image: python
     command: ['sleep','infinity']
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    imagePullPolicy: Always
+    command:
+    - sleep
+    args:
+    - 9999999
+    volumeMounts:
+      - name: jenkins-docker-cfg
+        mountPath: /kaniko/.docker
+  volumes:
+  - name: jenkins-docker-cfg
+    projected:
+      sources:
+      - secret:
+          name: docker-credentials 
+          items:
+            - key: .dockerconfigjson
+              path: config.json
 '''
     }
   }
@@ -80,7 +96,7 @@ spec:
         withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
           container('sonar'){
             echo "=====================================${STAGE_NAME}====================================="
-            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot'
+            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot > sonarResults.txt'
           }
         }
       }
@@ -89,21 +105,37 @@ spec:
       steps{
         withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]){
         container('python'){
+          echo "=====================================${STAGE_NAME}====================================="
           sh '''
           #!/bin/bash
           apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
           chmod +x ./snyk
           mv ./snyk /usr/local/bin/
           pip install -r Original-bot/requirements.txt
-          snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt
+          snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt > snykResults.txt
           '''
           }
         }
       }
     }
+    stage('Build Docker Image and push to ECR'){
+      steps{
+         container(name: 'kaniko', shell: '/busybox/sh'){
+          sh '''#!/busybox/sh
+            /kaniko/executor --context Original-bot/Dockerfile --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
+          '''
+          sh '''#!/busybox/sh
+            /kaniko/executor --context Original-bot/Dockerfile --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
+          '''
+         } 
+      }
+    }
   }
   post {
     always {
+      echo "Archiving artifacts..."
+      archiveArtifacts allowEmptyArchive: true, artifacts: '**/**.txt', followSymlinks: false, onlyIfSuccessful: true
+      recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [sonarQube(pattern: '**/sonarResults.txt', reportEncoding: 'UTF-8', skipSymbolicLinks: true)]
       cleanWs()
       emailext(
         attachLog: true, 
