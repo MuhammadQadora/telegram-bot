@@ -123,11 +123,12 @@ spec:
          container(name: 'kaniko', shell: '/busybox/sh'){
           echo "=====================================${STAGE_NAME}====================================="
           sh '''#!/busybox/sh
-            /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
+            cd Original-bot
+            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
           '''
-          sh '''#!/busybox/sh
-            /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
-          '''
+          // sh '''#!/busybox/sh
+          //   /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
+          // '''
          } 
       }
     }
