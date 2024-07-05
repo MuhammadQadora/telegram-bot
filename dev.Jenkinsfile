@@ -118,18 +118,19 @@ spec:
         }
       }
     }
-    stage('Build Docker Image and push to ECR'){
-      steps{
-         container(name: 'kaniko', shell: '/busybox/sh'){
-          sh '''#!/busybox/sh
-            /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
-          '''
-          sh '''#!/busybox/sh
-            /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
-          '''
-         } 
-      }
-    }
+    // stage('Build Docker Image and push to ECR'){
+    //   steps{
+    //      container(name: 'kaniko', shell: '/busybox/sh'){
+    //       echo "=====================================${STAGE_NAME}====================================="
+    //       sh '''#!/busybox/sh
+    //         /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER 
+    //       '''
+    //       sh '''#!/busybox/sh
+    //         /kaniko/executor --context $PWD/Original-bot --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
+    //       '''
+    //      } 
+    //   }
+    // }
   }
   post {
     always {
