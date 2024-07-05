@@ -96,7 +96,7 @@ spec:
         withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
           container('sonar'){
             echo "=====================================${STAGE_NAME}====================================="
-            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot > sonarResults.txt'
+            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 1> sonarResults.txt'
           }
         }
       }
@@ -112,7 +112,7 @@ spec:
           chmod +x ./snyk
           mv ./snyk /usr/local/bin/
           pip install -r Original-bot/requirements.txt
-          snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt > snykResults.txt
+          snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 1> snykResults.txt
           '''
           }
         }
@@ -135,7 +135,7 @@ spec:
   post {
     always {
       echo "Archiving artifacts..."
-      archiveArtifacts allowEmptyArchive: true, artifacts: '$PWD/**.txt', followSymlinks: false, onlyIfSuccessful: true
+      archiveArtifacts allowEmptyArchive: true, artifacts: '**.txt', followSymlinks: false, onlyIfSuccessful: true
       recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [sonarQube(pattern: '**/sonarResults.txt', reportEncoding: 'UTF-8', skipSymbolicLinks: true)]
       cleanWs()
       emailext(
