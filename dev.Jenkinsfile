@@ -59,8 +59,8 @@ spec:
 
       shouldNotFlatten: false,
 
-      regexpFilterText: '$ref',
-      regexpFilterExpression: 'refs/heads/dev'
+      regexpFilterText: '$ref $modifiedFile',
+      regexpFilterExpression: 'refs/heads/dev Or.*'
     )
   }
   stages {
