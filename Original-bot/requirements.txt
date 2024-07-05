@@ -5,5 +5,5 @@ flask>=2.3.2
 matplotlib
 boto3
 openai
-pymongo
 
+pymongo
