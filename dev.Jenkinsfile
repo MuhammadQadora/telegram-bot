@@ -135,7 +135,7 @@ spec:
   post {
     always {
       echo "Archiving artifacts..."
-      archiveArtifacts allowEmptyArchive: true, artifacts: '**/**.txt', followSymlinks: false, onlyIfSuccessful: true
+      archiveArtifacts allowEmptyArchive: true, artifacts: '$PWD/**.txt', followSymlinks: false, onlyIfSuccessful: true
       recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [sonarQube(pattern: '**/sonarResults.txt', reportEncoding: 'UTF-8', skipSymbolicLinks: true)]
       cleanWs()
       emailext(
