@@ -92,7 +92,8 @@ spec:
         ),
         statusMsg: githubPRMessage('Build ended.'),
         statusVerifier: allowRunOnStatus('SUCCESS'),
-        unstableAs: 'FAILURE'
+        unstableAs: 'FAILURE',
+        errorHandler: statusOnPublisherError('FAILURE')
       )
       archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
       cleanWs()
