@@ -139,7 +139,7 @@ spec:
     stage('checkout from GitOps'){
       steps{
         echo "=====================================${STAGE_NAME}====================================="
-        checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
+        checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/GitOps']])
       }
     }
     stage('update chart and app verison'){
