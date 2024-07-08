@@ -110,6 +110,7 @@ spec:
     stage('does it exist'){
       steps{
         script{
+           echo "=====================================${STAGE_NAME}====================================="
           sh 'docker images'
         }
       }
