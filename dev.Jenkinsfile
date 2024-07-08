@@ -93,8 +93,8 @@ spec:
           env.version = sh(returnStdout: true, script: '''
           #!/bin/bash
           vnum=$(( $(cat dev-version.txt | tr -d '.') + 1 ))
-          version=$(echo $vnum | sed 's/./&./g' | sed 's/.$//g' )
-          echo $version | tee dev-version.txt
+          v=$(echo $vnum | sed 's/./&./g' | sed 's/.$//g' )
+          echo $v | tee dev-version.txt
           ''').trim()
           sh '''
           git config --global user.name "$user"
@@ -117,8 +117,8 @@ spec:
           echo "=====================================${STAGE_NAME}====================================="
           sh '''#!/busybox/sh
             cd Original-bot
-            /kaniko/executor --context `pwd` --cache=false --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$version
-            /kaniko/executor --context `pwd` --cache=false --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
+            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$v
+            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
           '''
          } 
       }
