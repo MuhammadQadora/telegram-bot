@@ -86,46 +86,39 @@ spec:
         }
       }
     }
-    // stage('unit test'){
-    //   steps{
-    //     echo "some tests ran and passed ...."
-    //   }
-    // }
-    // stage('scan with sonarqube'){
-    //   steps{
-    //     withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
-    //       container('sonar'){
-    //         echo "=====================================${STAGE_NAME}====================================="
-    //         sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
-    //       }
-    //     }
-    //   }
-    // }
-    // stage('pip install'){
-    //   steps{
-    //     withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]){
-    //     container('python'){
-    //       echo "=====================================${STAGE_NAME}====================================="
-    //       sh '''
-    //       #!/bin/bash
-    //       apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
-    //       chmod +x ./snyk
-    //       mv ./snyk /usr/local/bin/
-    //       pip install -r Original-bot/requirements.txt
-    //       snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
-    //       '''
-    //       }
-    //     }
-    //   }
-    // }
+    stage('update tag version'){
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'token', usernameVariable: 'user')]){
+        script {
+          env.version = sh(returnStdout: true, script: '''
+          #!/bin/bash
+          vnum=$(( $(cat dev-version.txt | tr -d '.') + 1 ))
+          version=$(echo $vnum | sed 's/./&./g' | sed 's/.$//g' )
+          echo $version
+          ''').trim()
+          sh '''
+          git config --global user.name "$user"
+          git config --global user.email "memomq70@gmail.com"
+          git remote set-url origin https://$user:$token@github.com/MuhammadQadora/telegram-bot
+          export check=$(git status | grep clean)
+          if [ "$check" = "nothing to commit, working tree clean" ];then echo yes && exit 0;fi
+          git checkout dev
+          git add dev-version.txt
+          git commit -m "Commit by Jenkins: updated tag to $version"
+          git push origin dev
+          '''
+          }
+        }
+      }
+    }
     stage('Build Docker Image and push to ECR'){
       steps{
          container(name: 'kaniko', shell: '/busybox/sh'){
           echo "=====================================${STAGE_NAME}====================================="
           sh '''#!/busybox/sh
             cd Original-bot
-            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER
-            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest 
+            /kaniko/executor --context `pwd` --no-cache --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$version
+            /kaniko/executor --context `pwd` --no-cache --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
           '''
          } 
       }
