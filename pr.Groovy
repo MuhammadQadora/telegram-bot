@@ -96,30 +96,12 @@ spec:
         }
       }
     }
-    stage('Build Docker Image and push to ECR'){
-      steps{
-         container(name: 'kaniko', shell: '/busybox/sh'){
-          echo "=====================================${STAGE_NAME}====================================="
-          sh '''#!/busybox/sh
-            cd Original-bot
-            /kaniko/executor --context `pwd` --no-push
-          '''
-         } 
-      }
-    }
-    stage('does it exist'){
-      steps{
-        script{
-           echo "=====================================${STAGE_NAME}====================================="
-          sh 'docker images'
-        }
-      }
-    }
   }
   post {
     always {
       echo "Archiving artifacts..."
-      recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [codeAnalysis(id: 'log-errors', reportEncoding: 'UTF-8')]
+      recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [sonarQube(id: 'sonar-check', name: 'sonar-check', pattern: 'sonarResults.txt', reportEncoding: 'UTF-8'),
+      codeAnalysis(id: 'snyk-results', name: 'snyk-resuts', pattern: 'snykResults.txt', reportEncoding: 'UTF-8')]
       archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
       cleanWs()
       emailext(
