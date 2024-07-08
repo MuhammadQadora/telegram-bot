@@ -116,6 +116,12 @@ spec:
     }
   }
   post {
+    failure {
+      publishChecks conclusion: 'FAILURE', detailsURL: '$BUILD_URL', name: 'dev-bot-build-status', title: 'dev-bot-build-status'
+    }
+    success {
+     publishChecks detailsURL: '$BUILD_URL', name: 'dev-bot-build-status', title: 'dev-bot-build-status'
+    }
     always {
       echo "Archiving artifacts..."
       archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
