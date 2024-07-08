@@ -94,7 +94,7 @@ spec:
           #!/bin/bash
           vnum=$(( $(cat dev-version.txt | tr -d '.') + 1 ))
           version=$(echo $vnum | sed 's/./&./g' | sed 's/.$//g' )
-          echo $version
+          echo $version | tee dev-version.txt
           ''').trim()
           sh '''
           git config --global user.name "$user"
