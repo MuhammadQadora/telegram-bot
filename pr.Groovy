@@ -42,19 +42,19 @@ spec:
     }
   }
   stages {
-    // stage('Print Params') {
-    //   when {
-    //     expression { env.ref != null } // Run only if triggered by webhook
-    //   }
-    //   steps {
-    //     script {
-    //       echo "=====================================${STAGE_NAME}====================================="
-    //       echo "Build Number: ${BUILD_NUMBER}"
-    //       echo "Pusher: ${env.pusher}"
-    //       echo "Region: ${params.region}"
-    //     }
-    //   }
-    // }
+    stage('Print Params') {
+      when {
+        expression { env.ref != null } // Run only if triggered by webhook
+      }
+      steps {
+        script {
+          echo "=====================================${STAGE_NAME}====================================="
+          echo "Build Number: ${BUILD_NUMBER}"
+          echo "Pusher: ${env.pusher}"
+          echo "Region: ${params.region}"
+        }
+      }
+    }
     stage('GitHub Checkout') {
       steps {
         script {
@@ -79,7 +79,7 @@ spec:
         }
       }
     }
-    stage('pip install'){
+    stage('Snyk test'){
       steps{
         withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]){
         container('python'){
@@ -96,26 +96,26 @@ spec:
         }
       }
     }
-    // stage('Build Docker Image and push to ECR'){
-    //   steps{
-    //      container(name: 'kaniko', shell: '/busybox/sh'){
-    //       echo "=====================================${STAGE_NAME}====================================="
-    //       sh '''#!/busybox/sh
-    //         cd Original-bot
-    //         /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER
-    //         /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest 
-    //       '''
-    //      } 
-    //   }
-    // }
+    stage('Build Docker Image and push to ECR'){
+      steps{
+         container(name: 'kaniko', shell: '/busybox/sh'){
+          echo "=====================================${STAGE_NAME}====================================="
+          sh '''#!/busybox/sh
+            cd Original-bot
+            /kaniko/executor --context `pwd` --no-push
+          '''
+         } 
+      }
+    }
+    stage('does it exist'){
+      steps{
+        script{
+          sh 'docker images'
+        }
+      }
+    }
   }
   post {
-    failure {
-      publishChecks actions: [[description: 'The build failed', identifier: '', label: 'bot-build-dev-status']], conclusion: 'FAILURE', name: 'devBuildCheck', title: 'devBuildCheck'
-    }
-    success {
-      publishChecks actions: [[description: 'The build was successful ', identifier: '', label: 'buildstatus']], name: 'dev-bot-build-status', title: 'dev-bot-build-status'
-    }
     always {
       echo "Archiving artifacts..."
       archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
