@@ -90,7 +90,7 @@ spec:
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'token', usernameVariable: 'user')]){
         script {
-          env.version = sh(returnStdout: true, script: '''
+          env.v = sh(returnStdout: true, script: '''
           #!/bin/bash
           vnum=$(( $(cat dev-version.txt | tr -d '.') + 1 ))
           v=$(echo $vnum | sed 's/./&./g' | sed 's/.$//g' )
