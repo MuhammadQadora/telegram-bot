@@ -96,17 +96,6 @@ spec:
           v=$(echo $vnum | sed 's/./&./g' | sed 's/.$//g' )
           echo $v | tee dev-version.txt
           ''').trim()
-          sh '''
-          git config --global user.name "$user"
-          git config --global user.email "memomq70@gmail.com"
-          git remote set-url origin https://$user:$token@github.com/MuhammadQadora/telegram-bot
-          export check=$(git status | grep clean)
-          if [ "$check" = "nothing to commit, working tree clean" ];then echo yes && exit 0;fi
-          git checkout dev
-          git add dev-version.txt
-          git commit -m "Commit by Jenkins: updated tag to $version"
-          git push origin dev
-          '''
           }
         }
       }
@@ -121,6 +110,25 @@ spec:
             /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
           '''
          } 
+      }
+    }
+    stage('push to github'){
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'token', usernameVariable: 'user')]){
+        script {
+           sh '''
+          git config --global user.name "$user"
+          git config --global user.email "memomq70@gmail.com"
+          git remote set-url origin https://$user:$token@github.com/MuhammadQadora/telegram-bot
+          export check=$(git status | grep clean)
+          if [ "$check" = "nothing to commit, working tree clean" ];then echo yes && exit 0;fi
+          git checkout dev
+          git add dev-version.txt
+          git commit -m "Commit by Jenkins: updated tag to $version"
+          git push origin dev
+          '''
+          }
+        }
       }
     }
     stage('clean workspace'){
@@ -140,7 +148,7 @@ spec:
         script {
           sh '''
           #!/bin/bash
-          sed -i "s/tag: .*/tag: $BUILD_NUMBER/" ./environments/dev/bot-chart/values.yaml
+          sed -i "s/tag: .*/tag: $v/" ./environments/dev/bot-chart/values.yaml
           cat ./environments/dev/bot-chart/values.yaml
           '''
         }
@@ -159,7 +167,7 @@ spec:
                     if [ "$check" = "nothing to commit, working tree clean" ];then echo yes && exit 0;fi
                     git checkout main
                     git add .
-                    git commit -m "Commit by Jenkins: updated tag to $BUILD_NUMBER"
+                    git commit -m "Commit by Jenkins: updated tag to $v"
                     git push origin main
                     '''
                 }
