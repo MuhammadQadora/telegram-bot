@@ -110,6 +110,7 @@ spec:
     stage('does it exist'){
       steps{
         script{
+           echo "=====================================${STAGE_NAME}====================================="
           sh 'docker images'
         }
       }
@@ -118,6 +119,7 @@ spec:
   post {
     always {
       echo "Archiving artifacts..."
+      recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [codeAnalysis(id: 'log-errors', reportEncoding: 'UTF-8')]
       archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
       cleanWs()
       emailext(
