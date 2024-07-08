@@ -117,8 +117,8 @@ spec:
           echo "=====================================${STAGE_NAME}====================================="
           sh '''#!/busybox/sh
             cd Original-bot
-            /kaniko/executor --context `pwd` --no-cache --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$version
-            /kaniko/executor --context `pwd` --no-cache --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
+            /kaniko/executor --context `pwd` --cache=false --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$version
+            /kaniko/executor --context `pwd` --cache=false --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest
           '''
          } 
       }
