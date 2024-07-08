@@ -88,6 +88,7 @@ spec:
     }
     stage('update tag version'){
       steps {
+        withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'token', usernameVariable: 'user')]){
         script {
           env.version = sh(returnStdout: true, script: '''
           #!/bin/bash
@@ -95,6 +96,18 @@ spec:
           version=$(echo $vnum | sed 's/./&./g' | sed 's/.$//g' )
           echo $version
           ''').trim()
+          sh '''
+          git config --global user.name "$user"
+          git config --global user.email "memomq70@gmail.com"
+          git remote set-url origin https://$user:$token@github.com/MuhammadQadora/telegram-bot
+          export check=$(git status | grep clean)
+          if [ "$check" = "nothing to commit, working tree clean" ];then echo yes && exit 0;fi
+          git checkout dev
+          git add dev-version.txt
+          git commit -m "Commit by Jenkins: updated tag to $version"
+          git push origin dev
+          '''
+          }
         }
       }
     }
