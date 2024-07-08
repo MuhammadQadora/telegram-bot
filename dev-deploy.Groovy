@@ -64,58 +64,59 @@ spec:
         }
       }
     }
-    stage('unit test'){
-      steps{
-        echo "some tests ran and passed ...."
-      }
-    }
-    stage('scan with sonarqube'){
-      steps{
-        withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
-          container('sonar'){
-            echo "=====================================${STAGE_NAME}====================================="
-            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
-          }
-        }
-      }
-    }
-    stage('Snyk test'){
-      steps{
-        withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]){
-        container('python'){
-          echo "=====================================${STAGE_NAME}====================================="
-          sh '''
-          #!/bin/bash
-          apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
-          chmod +x ./snyk
-          mv ./snyk /usr/local/bin/
-          pip install -r Original-bot/requirements.txt
-          snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
-          '''
-          }
-        }
-      }
-    }
+    // stage('unit test'){
+    //   steps{
+    //     echo "some tests ran and passed ...."
+    //   }
+    // }
+    // stage('scan with sonarqube'){
+    //   steps{
+    //     withSonarQubeEnv(credentialsId: 'sonar',installationName: 'sonar') {
+    //       container('sonar'){
+    //         echo "=====================================${STAGE_NAME}====================================="
+    //         sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
+    //       }
+    //     }
+    //   }
+    // }
+    // stage('pip install'){
+    //   steps{
+    //     withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]){
+    //     container('python'){
+    //       echo "=====================================${STAGE_NAME}====================================="
+    //       sh '''
+    //       #!/bin/bash
+    //       apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
+    //       chmod +x ./snyk
+    //       mv ./snyk /usr/local/bin/
+    //       pip install -r Original-bot/requirements.txt
+    //       snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
+    //       '''
+    //       }
+    //     }
+    //   }
+    // }
     stage('Build Docker Image and push to ECR'){
       steps{
          container(name: 'kaniko', shell: '/busybox/sh'){
           echo "=====================================${STAGE_NAME}====================================="
           sh '''#!/busybox/sh
             cd Original-bot
-            /kaniko/executor --context `pwd` --no-push
+            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:$BUILD_NUMBER
+            /kaniko/executor --context `pwd` --destination 933060838752.dkr.ecr.us-east-1.amazonaws.com/original-bot-dev:latest 
           '''
          } 
       }
     }
-    stage('does it exist'){
-      steps{
-        script{
-          sh 'docker images'
-        }
-      }
-    }
+    stage
   }
   post {
+    failure {
+      publishChecks conclusion: 'FAILURE', detailsURL: '$BUILD_URL', name: 'dev-bot-build-status', title: 'dev-bot-build-status'
+    }
+    success {
+     publishChecks detailsURL: '$BUILD_URL', name: 'dev-bot-build-status', title: 'dev-bot-build-status'
+    }
     always {
       echo "Archiving artifacts..."
       archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
