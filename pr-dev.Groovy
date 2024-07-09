@@ -4,9 +4,6 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '2'))
     ansiColor('xterm')
   }
-  environment{
-    gtoken = credentials('github-token')
-  }
   agent {
     kubernetes {
       yaml '''
@@ -52,7 +49,6 @@ spec:
       steps {
         script {
           echo "=====================================${STAGE_NAME}====================================="
-          updateGithubStatus('pending','The build is in pending state..')
           checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
           echo 'Checked out from GitHub...'
         }
@@ -92,12 +88,6 @@ spec:
     }
   }
   post {
-    success {
-      updateGithubStatus('success','The build was successful')
-    }
-    failure {
-      updateGithubStatus('failure', 'The build failed')
-    }
     always {
       echo "Archiving artifacts..."
       recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [
@@ -115,17 +105,4 @@ spec:
       )
     }
   }
-}
-
-def updateGithubStatus(String state,String description){
-  sh """
-  #!/bin/bash
-  curl -L \
-  -X POST \
-  -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer $gtoken_PSW" \
-  -H "X-GitHub-Api-Version: 2022-11-28" \
-  https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/${sha} \
-  -d '{"state": ${state},"target_url": ${BUILD_URL},"description": ${description},"context":"continuous-integration/jenkins"}'
-  """
 }
