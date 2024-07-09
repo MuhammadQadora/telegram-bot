@@ -28,7 +28,7 @@ spec:
    triggers {
     GenericTrigger(
       genericVariables: [
-        [key: 'ref', value: '$.base.ref'],
+        [key: 'ref', value: '$.pull_request.base.ref'],
         [key: 'action', value: '$.action'],
         [key: 'sha', value: '$.pull_request.head.sha']
       ],
@@ -44,7 +44,7 @@ spec:
       shouldNotFlatten: false,
 
       regexpFilterText: '$ref $action',
-      regexpFilterExpression: 'dev opened'
+      regexpFilterExpression: 'dev (opened|synchronize|reopened)'
     )
   }
   stages {
