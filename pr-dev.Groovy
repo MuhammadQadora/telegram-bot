@@ -43,8 +43,8 @@ spec:
 
       shouldNotFlatten: false,
 
-      regexpFilterText: '$ref $action',
-      regexpFilterExpression: 'dev (opened|synchronize|reopened)'
+      regexpFilterText: '$action',
+      regexpFilterExpression: 'opened'
     )
   }
   stages {
