@@ -46,7 +46,7 @@ spec:
   }
   environment {
         GITHUB_TOKEN = credentials('github-token')
-        GITHUB_REPO = 'muhammadqadora/telegram-bot'
+        GITHUB_REPO = 'MuhammadQadora/telegram-bot'
         COMMIT_SHA = "${env.sha}" // This should be dynamically set to the commit SHA
     }
   stages {
