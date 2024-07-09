@@ -65,15 +65,14 @@ spec:
         withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]) {
           container('python') {
             echo "=====================================${STAGE_NAME}====================================="
-            // sh '''
-            // #!/bin/bash
-            // apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
-            // chmod +x ./snyk
-            // mv ./snyk /usr/local/bin/
-            // pip install -r Original-bot/requirements.txt
-            // snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
-            // '''
-            snykSecurity additionalArguments: '--command=python3', projectName: 'myproject', severity: 'critical', snykInstallation: 'snyk@latest', snykTokenId: 'token-snyk', targetFile: './Original-bot/requirements.txt'
+            sh '''
+            #!/bin/bash
+            apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
+            chmod +x ./snyk
+            mv ./snyk /usr/local/bin/
+            pip install -r Original-bot/requirements.txt
+            snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
+            '''
           }
         }
       }
@@ -84,7 +83,7 @@ spec:
       echo "Archiving artifacts..."
       recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [
         sonarQube(id: 'sonar-check', name: 'sonar-check', pattern: 'sonarResults.txt', reportEncoding: 'UTF-8'),
-        codeAnalysis(id: 'snyk-results', name: 'snyk-results', pattern: '', reportEncoding: 'UTF-8')
+        codeAnalysis(id: 'snyk-results', name: 'snyk-results', pattern: 'snykResults', reportEncoding: 'UTF-8')
       ]
       githubPRStatusPublisher(
         buildMessage: message(
