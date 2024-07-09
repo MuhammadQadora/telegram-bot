@@ -52,8 +52,8 @@ spec:
       steps {
         script {
           echo "=====================================${STAGE_NAME}====================================="
-          checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
           updateGithubStatus('pending','The build is in pending state..')
+          checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
           echo 'Checked out from GitHub...'
         }
       }
@@ -126,6 +126,6 @@ def updateGithubStatus(String state,String description){
   -H "Authorization: Bearer $gtoken_PSW" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/$sha \
-  -d '{"state": $state,"target_url": $BUILD_URL,"description": $description,"context":"continuous-integration/jenkins"}'
+  -d '{"state": "$state","target_url": "$BUILD_URL","description": "$description","context":"continuous-integration/jenkins"}'
   '''
 }
