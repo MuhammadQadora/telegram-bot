@@ -4,6 +4,9 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '2'))
     ansiColor('xterm')
   }
+  environment{
+    gtoken = credentials('github-token')
+  }
   agent {
     kubernetes {
       yaml '''
@@ -44,18 +47,13 @@ spec:
       regexpFilterExpression: 'dev opened'
     )
   }
-  environment {
-        GITHUB_TOKEN = credentials('github-token')
-        GITHUB_REPO = 'MuhammadQadora/telegram-bot'
-        COMMIT_SHA = "${env.sha}" // This should be dynamically set to the commit SHA
-    }
   stages {
     stage('GitHub Checkout') {
       steps {
         script {
           echo "=====================================${STAGE_NAME}====================================="
           checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
-          updateGitHubStatus('pending', 'build', 'Build is in progress')
+          updateGithubStatus('pending','The build is in pending state..')
           echo 'Checked out from GitHub...'
         }
       }
@@ -95,12 +93,10 @@ spec:
   }
   post {
     success {
-      updateGitHubStatus('success', 'build', 'Build was successful')
-      updateGitHubStatus('success', 'test', 'Tests passed')
+      updateGithubStatus('success','The build was successful')
     }
     failure {
-      updateGitHubStatus('failure', 'build', 'Build failed')
-      updateGitHubStatus('failure', 'test', 'Tests failed')
+      updateGithubStatus('failure', 'The build failed')
     }
     always {
       echo "Archiving artifacts..."
@@ -121,19 +117,15 @@ spec:
   }
 }
 
-
-def updateGitHubStatus(String state, String context, String description) {
-    def url = "https://api.github.com/repos/${env.GITHUB_REPO}/statuses/${env.COMMIT_SHA}"
-    
-    httpRequest acceptType: 'APPLICATION_JSON',
-                contentType: 'APPLICATION_JSON',
-                httpMode: 'POST',
-                url: url,
-                customHeaders: [[name: 'Authorization', value: "token ${env.GITHUB_TOKEN}"]],
-                requestBody: """{
-                    "state": "${state}",
-                    "context": "${context}",
-                    "description": "${description}",
-                    "target_url": "${env.BUILD_URL}"
-                }"""
+def updateGithubStatus(String state,String description){
+  sh '''
+  #!/bin/bash
+  curl -L \
+  -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $gtoken" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/$sha \
+  -d '{"state": $state,"target_url": $BUILD_URL,"description": $description,"context":"continuous-integration/jenkins"}'
+  '''
 }
