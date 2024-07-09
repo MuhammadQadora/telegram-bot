@@ -55,6 +55,7 @@ spec:
         script {
           echo "=====================================${STAGE_NAME}====================================="
           checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
+          updateGitHubStatus('pending', 'build', 'Build is in progress')
           echo 'Checked out from GitHub...'
         }
       }
