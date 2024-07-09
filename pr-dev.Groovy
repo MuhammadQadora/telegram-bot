@@ -22,25 +22,40 @@ spec:
 '''
     }
   }
-  stages {
-    stage('Print Params') {
-      when {
-        expression { env.ref != null } // Run only if triggered by webhook
-      }
-      steps {
-        script {
-          echo "=====================================${STAGE_NAME}====================================="
-          echo "Build Number: ${BUILD_NUMBER}"
-          echo "Pusher: ${env.pusher}"
-          echo "Region: ${params.region}"
-        }
-      }
+   triggers {
+    GenericTrigger(
+      genericVariables: [
+        [key: 'ref', value: '$.base.ref'],
+        [key: 'action', value: '$.action'],
+        [key: 'sha', value: '$.pull_request.head.sha']
+      ],
+      causeString: 'Triggered on $ref',
+      token: '',
+      tokenCredentialId: 'webhook-token',
+
+      printContributedVariables: true,
+      printPostContent: true,
+
+      silentResponse: false,
+
+      shouldNotFlatten: false,
+
+      regexpFilterText: '$ref $action',
+      regexpFilterExpression: 'dev opened'
+    )
+  }
+  environment {
+        GITHUB_TOKEN = credentials('github-token')
+        GITHUB_REPO = 'MuhammadQadora/telegram-bot'
+        COMMIT_SHA = "${env.sha}" // This should be dynamically set to the commit SHA
     }
+  stages {
     stage('GitHub Checkout') {
       steps {
         script {
           echo "=====================================${STAGE_NAME}====================================="
           checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
+          updateGitHubStatus('pending', 'build', 'Build is in progress')
           echo 'Checked out from GitHub...'
         }
       }
@@ -79,22 +94,20 @@ spec:
     }
   }
   post {
+    success {
+      updateGitHubStatus('success', 'build', 'Build was successful')
+      updateGitHubStatus('success', 'test', 'Tests passed')
+    }
+    failure {
+      updateGitHubStatus('failure', 'build', 'Build failed')
+      updateGitHubStatus('failure', 'test', 'Tests failed')
+    }
     always {
       echo "Archiving artifacts..."
       recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [
         sonarQube(id: 'sonar-check', name: 'sonar-check', pattern: 'sonarResults.txt', reportEncoding: 'UTF-8'),
         codeAnalysis(id: 'snyk-results', name: 'snyk-results', pattern: 'snykResults.txt', reportEncoding: 'UTF-8')
       ]
-      githubPRStatusPublisher(
-        buildMessage: message(
-          failureMsg: githubPRMessage('Can\'t set status; build failed.'),
-          successMsg: githubPRMessage('Build succeeded.')
-        ),
-        statusMsg: githubPRMessage('Build ended.'),
-        statusVerifier: allowRunOnStatus('SUCCESS'),
-        unstableAs: 'FAILURE',
-        errorHandler: statusOnPublisherError('FAILURE')
-      )
       archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
       cleanWs()
       emailext(
@@ -106,4 +119,21 @@ spec:
       )
     }
   }
+}
+
+
+def updateGitHubStatus(String state, String context, String description) {
+    def url = "https://api.github.com/repos/${env.GITHUB_REPO}/statuses/${env.COMMIT_SHA}"
+    
+    httpRequest acceptType: 'APPLICATION_JSON',
+                contentType: 'APPLICATION_JSON',
+                httpMode: 'POST',
+                url: url,
+                customHeaders: [[name: 'Authorization', value: "token ${env.GITHUB_TOKEN}"]],
+                requestBody: """{
+                    "state": "${state}",
+                    "context": "${context}",
+                    "description": "${description}",
+                    "target_url": "${env.BUILD_URL}"
+                }"""
 }
