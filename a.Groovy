@@ -47,7 +47,7 @@ spec:
     }
     stage('unit test') {
       steps {
-        echo "some tests ran and passed .... "
+        echo "some tests ran and passed ...."
       }
     }
     stage('scan with sonarqube') {
