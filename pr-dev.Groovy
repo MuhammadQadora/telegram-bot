@@ -50,7 +50,7 @@ spec:
         script {
           echo "=====================================${STAGE_NAME}====================================="
           checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
-          publishChecks conclusion: 'NONE', detailsURL: '$BUILD_URL', name: 'newcheck', status: 'IN_PROGRESS', summary: 'passed', text: 'blabla', title: 'testing'
+          updateStatus('pending','tests started')
           echo 'Checked out from GitHub...'
         }
       }
@@ -90,10 +90,10 @@ spec:
   }
   post {
     failure {
-        publishChecks conclusion: 'FAILURE', detailsURL: '$BUILD_URL', name: 'newcheck', summary: 'failed', text: 'blabla', title: 'testing'
+       updateStatus('failure','The tests failed')
     }
     success{
-        publishChecks detailsURL: '$BUILD_URL', name: 'newcheck', summary: 'success', text: 'blabla', title: 'testing'
+        updateStatus('success','The tests succeded')
     }
     always {
       echo "Archiving artifacts..."
@@ -112,4 +112,21 @@ spec:
       )
     }
   }
+}
+
+def updateStatus(String state, String description){
+    withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'gtoken', usernameVariable: 'user')]) {
+    script {
+    sh '''
+    #!/bin/bash
+    curl -L \
+      -X POST \
+      -H "Accept: application/vnd.github+json" \
+      -H "Authorization: Bearer $gtoken" \
+      -H "X-GitHub-Api-Version: 2022-11-28" \
+      https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/$sha \
+      -d '{"state":"$state","target_url":"$BUILD_URL","description":"$description","context":"continuous-integration/jenkins"}'
+    '''
+      }
+    }
 }
