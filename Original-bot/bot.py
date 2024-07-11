@@ -15,7 +15,7 @@ from local_user_DB import *
 list_members = []
 
 ##################
-token = secret_keys['TELEGRAM_TOKEN']
+token = os.environ['TELEGRAM_TOKEN']
 url = os.environ['TELEGRAM_APP_URL']
 bucket_name = secret_keys['BUCKET_NAME']
 queue_url = os.environ['SQS_URL']
@@ -59,11 +59,8 @@ class Bot:
         self.bot = telebot.TeleBot(token=token)
         self.bot.remove_webhook()
         time.sleep(5)
-        try:
-            self.bot.set_webhook(f"{url}/{token}", timeout=60)
-            logger.info(f"Connected to bot:\n{self.bot.get_me()}")
-        except telebot.apihelper.ApiTelegramException as e:
-            logger.info(e)
+        self.bot.set_webhook(f"{url}/{token}", timeout=60)
+        logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
 
     # this function continuously checks for comming messages
