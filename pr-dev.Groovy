@@ -116,17 +116,15 @@ spec:
 
 def updateStatus(String state, String description){
     withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'gtoken', usernameVariable: 'user')]) {
-    script {
     sh """
     #!/bin/bash
     curl -L \
       -X POST \
       -H "Accept: application/vnd.github+json" \
-      -H "Authorization: Bearer ${env.gtoken}" \
+      -H "Authorization: Bearer ${gtoken}" \
       -H "X-GitHub-Api-Version: 2022-11-28" \
-      https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/"${env.sha}" \
-      -d '{"state":"${env.state}","target_url":"${env.BUILD_URL}","description":"${env.description}","context":"continuous-integration/jenkins"}'
+      https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/"${sha}" \
+      -d '{"state":"${state}","target_url":"${BUILD_URL}","description":"${description}","context":"continuous-integration/jenkins"}'
     """
-      }
     }
 }
