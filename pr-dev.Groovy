@@ -1,12 +1,7 @@
 pipeline {
-  options {
-    timestamps()
-    buildDiscarder(logRotator(numToKeepStr: '2'))
-    ansiColor('xterm')
-  }
-  agent {
-    kubernetes {
-      yaml '''
+    agent {
+        kubernetes {
+            yaml '''
 apiVersion: v1
 kind: Pod
 metadata:
@@ -20,96 +15,120 @@ spec:
     image: python
     command: ['sleep','infinity']
 '''
-    }
-  }
-   triggers {
-    GenericTrigger(
-      genericVariables: [
-        [key: 'ref', value: '$.pull_request.base.ref'],
-        [key: 'action', value: '$.action'],
-        [key: 'sha', value: '$.pull_request.head.sha']
-      ],
-      causeString: 'Triggered on $ref',
-      token: '',
-      tokenCredentialId: 'webhook-token',
-
-      printContributedVariables: true,
-      printPostContent: true,
-
-      silentResponse: false,
-
-      shouldNotFlatten: false,
-
-      regexpFilterText: '$ref $action',
-      regexpFilterExpression: 'dev opened'
-    )
-  }
-  stages {
-    stage('GitHub Checkout') {
-      steps {
-        script {
-          echo "=====================================${STAGE_NAME}====================================="
-          gitHubPRStatus githubPRMessage('${GITHUB_PR_COND_REF} run started')
-          checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
-          echo 'Checked out from GitHub...'
         }
-      }
     }
-    stage('unit test') {
-      steps {
-        echo "some tests ran and passed ...."
-      }
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '2'))
+        ansiColor('xterm')
     }
-    stage('scan with sonarqube') {
-      steps {
-        withSonarQubeEnv(credentialsId: 'sonar', installationName: 'sonar') {
-          container('sonar') {
-            echo "=====================================${STAGE_NAME}====================================="
-            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
-          }
+    triggers {
+        GenericTrigger(
+            genericVariables: [
+                [key: 'ref', value: '$.pull_request.base.ref'],
+                [key: 'action', value: '$.action'],
+                [key: 'sha', value: '$.pull_request.head.sha']
+            ],
+            causeString: 'Triggered on $ref',
+            token: '',
+            tokenCredentialId: 'webhook-token',
+            printContributedVariables: true,
+            printPostContent: true,
+            silentResponse: false,
+            shouldNotFlatten: false,
+            regexpFilterText: '$ref $action',
+            regexpFilterExpression: 'dev opened'
+        )
+    }
+    stages {
+        stage('GitHub Checkout') {
+            steps {
+                script {
+                    echo "=====================================${STAGE_NAME}====================================="
+                    gitHubPRStatus githubPRMessage('${GITHUB_PR_COND_REF} run started')
+                    checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
+                    echo 'Checked out from GitHub...'
+                }
+            }
         }
-      }
-    }
-    stage('Snyk test') {
-      steps {
-        withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]) {
-          container('python') {
-            echo "=====================================${STAGE_NAME}====================================="
-            sh '''
-            #!/bin/bash
-            apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
-            chmod +x ./snyk
-            mv ./snyk /usr/local/bin/
-            pip install -r Original-bot/requirements.txt
-            snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
-            '''
-          }
+        stage('unit test') {
+            steps {
+                echo "some tests ran and passed ...."
+            }
         }
-      }
+        stage('scan with sonarqube') {
+            steps {
+                withSonarQubeEnv(credentialsId: 'sonar', installationName: 'sonar') {
+                    container('sonar') {
+                        echo "=====================================${STAGE_NAME}====================================="
+                        sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
+                    }
+                }
+            }
+        }
+        stage('Snyk test') {
+            steps {
+                withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]) {
+                    container('python') {
+                        echo "=====================================${STAGE_NAME}====================================="
+                        sh '''
+                        #!/bin/bash
+                        apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
+                        chmod +x ./snyk
+                        mv ./snyk /usr/local/bin/
+                        pip install -r Original-bot/requirements.txt
+                        snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
+                        '''
+                    }
+                }
+            }
+        }
     }
-  }
-  post {
-    success{
-      githubPRStatusPublisher buildMessage: message(failureMsg: githubPRMessage('Can\'t set status; build failed.'), successMsg: githubPRMessage('Can\'t set status; build succeeded.')), statusMsg: githubPRMessage('${GITHUB_PR_COND_REF} run ended'), statusVerifier: allowRunOnStatus('SUCCESS'), unstableAs: 'FAILURE', errorHandler: statusOnPublisherError('FAILURE')
+    post {
+        success {
+            script {
+                updateGitHubStatus('success', 'All checks passed!', 'ci/build')
+            }
+        }
+        failure {
+            script {
+                updateGitHubStatus('failure', 'Some checks failed.', 'ci/build')
+            }
+        }
+        always {
+            echo "Archiving artifacts..."
+            recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [
+                sonarQube(id: 'sonar-check', name: 'sonar-check', pattern: 'sonarResults.txt', reportEncoding: 'UTF-8'),
+                codeAnalysis(id: 'snyk-results', name: 'snyk-results', pattern: 'snykResults.txt', reportEncoding: 'UTF-8')
+            ]
+            archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
+            cleanWs()
+            emailext(
+                attachLog: true,
+                body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
+                    Check console output at $BUILD_URL to view the results.''',
+                subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
+                to: 'memomq70@gmail.com, firas.narani.1999@outlook.com'
+            )
+        }
     }
-    failure{
-      githubPRStatusPublisher buildMessage: message(failureMsg: githubPRMessage('Can\'t set status; build failed.'), successMsg: githubPRMessage('Can\'t set status; build succeeded.')), statusMsg: githubPRMessage('${GITHUB_PR_COND_REF} run ended'), statusVerifier: allowRunOnStatus('FAILURE'), unstableAs: 'FAILURE',  errorHandler: statusOnPublisherError('FAILURE')
+}
+
+def updateGitHubStatus(String state, String description, String context) {
+    def apiUrl = "https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/${env.GIT_COMMIT}"
+    def payload = [
+        state: state,
+        description: description,
+        context: context
+    ]
+    def credentialsId = 'github-token'
+    withCredentials([string(credentialsId: credentialsId, variable: 'GITHUB_TOKEN')]) {
+        sh """
+            curl -X POST \
+            -H 'Authorization: token $GITHUB_TOKEN' \
+            -H 'Content-Type: application/json' \
+            -d '${payload as JSON}' \
+            $apiUrl
+        """
     }
-    always {
-      echo "Archiving artifacts..."
-      recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [
-        sonarQube(id: 'sonar-check', name: 'sonar-check', pattern: 'sonarResults.txt', reportEncoding: 'UTF-8'),
-        codeAnalysis(id: 'snyk-results', name: 'snyk-results', pattern: 'snykResults.txt', reportEncoding: 'UTF-8')
-      ]
-      archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
-      cleanWs()
-      emailext(
-        attachLog: true,
-        body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
-              Check console output at $BUILD_URL to view the results.''',
-        subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
-        to: 'memomq70@gmail.com, firas.narani.1999@outlook.com'
-      )
-    }
-  }
 }
