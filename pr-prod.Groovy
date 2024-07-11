@@ -22,25 +22,36 @@ spec:
 '''
     }
   }
+   triggers {
+    GenericTrigger(
+      genericVariables: [
+        [key: 'ref', value: '$.pull_request.base.ref'],
+        [key: 'action', value: '$.action'],
+        [key: 'sha', value: '$.pull_request.head.sha']
+      ],
+      causeString: 'Triggered on $ref',
+      token: '',
+      tokenCredentialId: 'webhook-token',
+
+      printContributedVariables: true,
+      printPostContent: true,
+
+      silentResponse: false,
+
+      shouldNotFlatten: false,
+
+      regexpFilterText: '$ref $action',
+      regexpFilterExpression: 'main opened'
+    )
+  }
   stages {
-    stage('Print Params') {
-      when {
-        expression { env.ref != null } // Run only if triggered by webhook
-      }
-      steps {
-        script {
-          echo "=====================================${STAGE_NAME}====================================="
-          echo "Build Number: ${BUILD_NUMBER}"
-          echo "Pusher: ${env.pusher}"
-          echo "Region: ${params.region}"
-        }
-      }
-    }
     stage('GitHub Checkout') {
       steps {
         script {
           echo "=====================================${STAGE_NAME}====================================="
+          updateStatus('pending','tests started')
           checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
+          updateStatus('pending','tests started')
           echo 'Checked out from GitHub...'
         }
       }
@@ -79,22 +90,18 @@ spec:
     }
   }
   post {
+    failure {
+       updateStatus('failure','The tests failed')
+    }
+    success{
+        updateStatus('success','The tests succeded')
+    }
     always {
       echo "Archiving artifacts..."
       recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [
         sonarQube(id: 'sonar-check', name: 'sonar-check', pattern: 'sonarResults.txt', reportEncoding: 'UTF-8'),
         codeAnalysis(id: 'snyk-results', name: 'snyk-results', pattern: 'snykResults.txt', reportEncoding: 'UTF-8')
       ]
-      githubPRStatusPublisher(
-        buildMessage: message(
-          failureMsg: githubPRMessage('Can\'t set status; build failed.'),
-          successMsg: githubPRMessage('Build succeeded.')
-        ),
-        statusMsg: githubPRMessage('Build ended.'),
-        statusVerifier: allowRunOnStatus('SUCCESS'),
-        unstableAs: 'FAILURE',
-        errorHandler: statusOnPublisherError('FAILURE')
-      )
       archiveArtifacts allowEmptyArchive: true, artifacts: '*.txt', followSymlinks: false, onlyIfSuccessful: true
       cleanWs()
       emailext(
@@ -106,4 +113,19 @@ spec:
       )
     }
   }
+}
+
+def updateStatus(String state, String description){
+    withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'gtoken', usernameVariable: 'user')]) {
+    sh """
+    #!/bin/bash
+    curl -L \
+      -X POST \
+      -H "Accept: application/vnd.github+json" \
+      -H "Authorization: Bearer ${gtoken}" \
+      -H "X-GitHub-Api-Version: 2022-11-28" \
+      https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/"${sha}" \
+      -d '{"state":"${state}","target_url":"${BUILD_URL}","description":"${description}","context":"continuous-integration/jenkins"}'
+    """
+    }
 }
