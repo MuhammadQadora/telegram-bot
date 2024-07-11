@@ -41,7 +41,7 @@ spec:
       shouldNotFlatten: false,
 
       regexpFilterText: '$ref $action',
-      regexpFilterExpression: 'main'
+      regexpFilterExpression: 'main opened'
     )
   }
   stages {
