@@ -97,7 +97,7 @@ spec:
         updateStatus('success','The tests succeded')
     }
     always {
-      echo "Archiving artifacts...."
+      echo "Archiving artifacts..."
       recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [
         sonarQube(id: 'sonar-check', name: 'sonar-check', pattern: 'sonarResults.txt', reportEncoding: 'UTF-8'),
         codeAnalysis(id: 'snyk-results', name: 'snyk-results', pattern: 'snykResults.txt', reportEncoding: 'UTF-8')
