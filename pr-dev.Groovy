@@ -116,18 +116,18 @@ spec:
 
 def updateGitHubStatus(String state, String description, String context) {
     def apiUrl = "https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/${env.GIT_COMMIT}"
-    def payload = [
-        state: state,
-        description: description,
-        context: context
-    ]
+    def payload = {
+        "state": "${state}",
+        "description": "${description}",
+        "context": "${context}"
+    }
     def credentialsId = 'github-token'
     withCredentials([string(credentialsId: credentialsId, variable: 'GITHUB_TOKEN')]) {
         sh """
             curl -X POST \
-            -H 'Authorization: token $GITHUB_TOKEN' \
+            -H 'Authorization: token $GITHUB_TOKEN_PSW' \
             -H 'Content-Type: application/json' \
-            -d '${payload as JSON}' \
+            -d '${payload}' \
             $apiUrl
         """
     }
