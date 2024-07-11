@@ -66,7 +66,7 @@ spec:
         withSonarQubeEnv(credentialsId: 'sonar', installationName: 'sonar') {
           container('sonar') {
             echo "=====================================${STAGE_NAME}====================================="
-            sh 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
+            sh 'sonar-scanner -Dsonar.projectKey=prodproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
           }
         }
       }
