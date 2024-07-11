@@ -94,7 +94,7 @@ spec:
           #!/bin/bash
           vnum=$(( $(cat prod-version.txt | tr -d '.') + 1 ))
           v=$(echo $vnum | sed 's/./&./g' | sed 's/.$//g' )
-          echo $v | tee dev-version.txt
+          echo $v | tee prod-version.txt
           ''').trim()
           }
         }
