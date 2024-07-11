@@ -51,6 +51,7 @@ spec:
           echo "=====================================${STAGE_NAME}====================================="
           updateStatus('pending','tests started')
           checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
+          updateStatus('pending','tests started')
           echo 'Checked out from GitHub...'
         }
       }
@@ -116,15 +117,15 @@ spec:
 
 def updateStatus(String state, String description){
     withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'gtoken', usernameVariable: 'user')]) {
-    sh '''
+    sh """
     #!/bin/bash
     curl -L \
       -X POST \
       -H "Accept: application/vnd.github+json" \
-      -H "Authorization: Bearer $gtoken" \
+      -H "Authorization: Bearer ${gtoken}" \
       -H "X-GitHub-Api-Version: 2022-11-28" \
-      https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/$sha \
-      -d '{"state": $state,"target_url": $BUILD_URL,"description": $description ,"context":"continuous-integration/jenkins"}'
-    '''
+      https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/"${sha}" \
+      -d '{"state":"${state}","target_url":"${BUILD_URL}","description":"${description}","context":"continuous-integration/jenkins"}'
+    """
     }
 }
