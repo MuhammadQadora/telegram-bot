@@ -41,7 +41,7 @@ spec:
       shouldNotFlatten: false,
 
       regexpFilterText: '$ref $action',
-      regexpFilterExpression: 'dev (opened|synchronize|reopened)'
+      regexpFilterExpression: 'dev opened'
     )
   }
   stages {
@@ -49,6 +49,7 @@ spec:
       steps {
         script {
           echo "=====================================${STAGE_NAME}====================================="
+          gitHubPRStatus githubPRMessage('${GITHUB_PR_COND_REF} run started')
           checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
           echo 'Checked out from GitHub...'
         }
@@ -88,6 +89,12 @@ spec:
     }
   }
   post {
+    success{
+      githubPRStatusPublisher buildMessage: message(failureMsg: githubPRMessage('Can\'t set status; build failed.'), successMsg: githubPRMessage('Can\'t set status; build succeeded.')), statusMsg: githubPRMessage('${GITHUB_PR_COND_REF} run ended'), statusVerifier: allowRunOnStatus('SUCCESS'), unstableAs: 'FAILURE'
+    }
+    failure{
+      githubPRStatusPublisher buildMessage: message(failureMsg: githubPRMessage('Can\'t set status; build failed.'), successMsg: githubPRMessage('Can\'t set status; build succeeded.')), statusMsg: githubPRMessage('${GITHUB_PR_COND_REF} run ended'), statusVerifier: allowRunOnStatus('FAILURE'), unstableAs: 'FAILURE'
+    }
     always {
       echo "Archiving artifacts..."
       recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [
