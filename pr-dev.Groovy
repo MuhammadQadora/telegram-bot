@@ -117,7 +117,7 @@ spec:
 def updateStatus(String state, String description){
     withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'gtoken', usernameVariable: 'user')]) {
     script {
-    sh '''
+    sh """
     #!/bin/bash
     curl -L \
       -X POST \
@@ -126,7 +126,7 @@ def updateStatus(String state, String description){
       -H "X-GitHub-Api-Version: 2022-11-28" \
       https://api.github.com/repos/MuhammadQadora/telegram-bot/statuses/"${env.sha}" \
       -d '{"state":"${env.state}","target_url":"${env.BUILD_URL}","description":"${env.description}","context":"continuous-integration/jenkins"}'
-    '''
+    """
       }
     }
 }
