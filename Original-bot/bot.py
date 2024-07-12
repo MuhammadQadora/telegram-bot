@@ -74,7 +74,7 @@ class Bot:
         def start(msg):
             global list_members
             logger.info(list_members)
-            self.bot.send_message(msg.chat.id, f"Hi there {msg.from_user.first_name}.\nWelcome to my bot detector Hello habibi, to see what this Bot can do use /help .")
+            self.bot.send_message(msg.chat.id, f"Hi there {msg.from_user.first_name}.\nWelcome to my bot detector chupappy, to see what this Bot can do use /help .")
             add_member(list_members, msg.chat.id)
             logger.info(len(list_members))
 
