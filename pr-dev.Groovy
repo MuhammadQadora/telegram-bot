@@ -3,7 +3,6 @@ pipeline {
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '2'))
     ansiColor('xterm')
-    skipDefaultCheckout() 
   }
   agent {
     kubernetes {
@@ -60,6 +59,13 @@ spec:
     stage('unit test') {
       steps {
         echo "some tests ran and passed ...."
+      }
+    }
+    stage('enforce PEP8 with Black'){
+      steps{
+        container('python'){
+          sh 'pip install -no-cache-dir black; python3 -m black .'
+        }
       }
     }
     stage('scan with sonarqube') {

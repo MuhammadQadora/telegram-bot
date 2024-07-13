@@ -1,15 +1,19 @@
 from enum import Enum
 from loguru import logger
+
+
 class Notify(Enum):
-    CHATGPT = 'chatgpt'
-    GPT4 = 'gpt4'
-    YOLO = 'yolo'
-    QUESTION = 'question'
-    TEXT_TO_IMAGE = 'textToImage'
+    CHATGPT = "chatgpt"
+    GPT4 = "gpt4"
+    YOLO = "yolo"
+    QUESTION = "question"
+    TEXT_TO_IMAGE = "textToImage"
+
 
 class Member:
     name = str()
     notify = dict()
+
     def __init__(self, name):
         self.name = name
         self.notify = {notify: False for notify in Notify}
@@ -22,27 +26,31 @@ class Member:
 
 
 def is_member_in_list_by_name(bot_members, name):
-    #Check if a member object with a given name exists in the list.
+    # Check if a member object with a given name exists in the list.
     return any(member.name == name for member in bot_members)
 
+
 def add_member(bot_members, name):
-    #Add a new member to the list if it doesn't already exist.
+    # Add a new member to the list if it doesn't already exist.
     if is_member_in_list_by_name(bot_members, name) == False:
         bot_members.append(Member(name))
 
+
 def get_member_by_name(member_list, name):
-    #Get the first Member object from the list with the given name.5
+    # Get the first Member object from the list with the given name.5
     for member in member_list:
         if member.name == name:
             return member
     return None  # Return None if no member with the specified name is found
 
+
 def get_notify_by_member_name(member_list, name):
-    #Get the first Member object from the list with the given name.5
+    # Get the first Member object from the list with the given name.5
     for member in member_list:
         if member.name == name:
             return member.notify
     return None  # Return None if no member with the specified name is found
+
 
 def print_member_params(member_list):
     for member in member_list:
