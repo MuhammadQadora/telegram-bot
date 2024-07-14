@@ -58,12 +58,14 @@ spec:
     }
     stage('unit test') {
       steps {
+        echo "=====================================${STAGE_NAME}====================================="
         echo "some tests ran and passed ...."
       }
     }
     stage('enforce PEP8 with Black'){
       steps{
         container('python'){
+          echo "=====================================${STAGE_NAME}====================================="
           sh 'pip install -no-cache-dir black; python3 -m black .'
         }
       }
