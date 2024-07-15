@@ -50,7 +50,13 @@ pipeline {
     stage('enforce PEP8 with Black'){
       steps{
           echo "=====================================${STAGE_NAME}====================================="
-          sh 'pip install --no-cache-dir black; python3 -m black .'
+          sh '''
+          #!/bin/bash
+          python3 -m venv private
+          . private/bin/activate
+          pip install --no-cache-dir black; python3 -m black .
+          deactivate
+          '''
       }
     }
     stage('scan with sonarqube') {
@@ -67,8 +73,10 @@ pipeline {
             echo "=====================================${STAGE_NAME}====================================="
             sh '''
             #!/bin/bash
+            . private/bin/activate
             pip install -r Original-bot/requirements.txt
-            snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
+            snyk test --package-manager=pip --command=python3.11 --file=./Original-bot/requirements.txt 2> snykResults.txt
+            deactivate
             '''
         }
       }
