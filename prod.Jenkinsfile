@@ -123,7 +123,7 @@ spec:
           export check=$(git status | grep clean)
           if [ "$check" = "nothing to commit, working tree clean" ];then echo yes && exit 0;fi
           git checkout main
-          git add prod-version.txt
+          git add .
           git commit -m "Commit by Jenkins: updated tag to $version"
           git push origin main
           '''
