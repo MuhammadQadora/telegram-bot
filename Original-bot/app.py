@@ -8,7 +8,7 @@ from bot import token, region_name, sns_topic_arn, server_endpoint, table, Util
 app = Flask(__name__)
 
 sns_client = boto3.client("sns", region_name=region_name)
-dynamodb = boto3.client("dynamodb", region_name=region_name)
+dynamodb = boto3.resource("dynamodb", region_name=region_name)
 server_endpoint = server_endpoint
 
 
@@ -24,7 +24,6 @@ def webhook():
     return "Ok", 200
 
 
-# result = {'job_id': msg_id,"msg": message['chat_id'], 'Status_Code': 200}
 @app.route("/sns_update", methods=["POST"])
 def sns_notification():
     data = json.loads(request.get_data().decode())
@@ -36,15 +35,13 @@ def sns_notification():
     else:
         data = json.loads(data["Message"])
         if data["Status_Code"] == 200:
-            response = dynamodb.get_item(
+            table_resource = dynamodb.Table(table)
+            response = table_resource.get_item(
                 Key={
-                    "_id": {
-                        "S": data["job_id"],
-                    }
-                },
-                TableName=table,
+                    "_id": data["job_id"]
+                }
             )
-            prediction = json.loads(response["Item"]["text"]["S"])
+            prediction = json.loads(response["Item"]["text"])
             util = Util(prediction)
             result = util.object_count()
             bot.bot.send_message(
