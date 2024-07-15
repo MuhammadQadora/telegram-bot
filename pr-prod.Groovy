@@ -66,7 +66,7 @@ spec:
       steps{
         container('python'){
           echo "=====================================${STAGE_NAME}====================================="
-          sh 'pip install -no-cache-dir black; python3 -m black .'
+          sh 'pip install --no-cache-dir black; python3 -m black .'
         }
       }
     }
