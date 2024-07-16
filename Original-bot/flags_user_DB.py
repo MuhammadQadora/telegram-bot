@@ -68,6 +68,7 @@ def add_member(bot_members, name):
         
         # Add the new member to the DynamoDB table
         item = {
+            '_id': new_member.name,
             'name': new_member.name,
             'notify': new_member.notify
         }
