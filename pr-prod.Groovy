@@ -78,10 +78,10 @@ spec:
     stage('scan with sonarqube') {
       steps {
         withSonarQubeEnv(credentialsId: 'sonar', installationName: 'sonar') {
-          container('sonar') {
+          //container('sonar') {
             echo "=====================================${STAGE_NAME}====================================="
-            sh 'sonar-scanner -Dsonar.projectKey=prodproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
-          }
+            sh '/opt/sonar-scanner/bin/sonar-scanner -Dsonar.projectKey=prodproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
+          //}
         }
       }
     }
