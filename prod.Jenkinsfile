@@ -13,12 +13,6 @@ metadata:
   name: sonar
 spec:
   containers:
-  - name: sonar
-    image: sonarsource/sonar-scanner-cli
-    command: ['sleep','infinity']
-  - name: python
-    image: python
-    command: ['sleep','infinity']
   - name: kaniko
     image: gcr.io/kaniko-project/executor:debug
     imagePullPolicy: Always
@@ -149,6 +143,7 @@ spec:
           sh '''
           #!/bin/bash
           sed -i "s/tag: .*/tag: $v/" ./environments/prod/bot-chart/values.yaml
+          sed -i "s/appVersion: .*/appVersion: $v/" ./environments/prod/bot-chart/Chart.yaml
           cat ./environments/prod/bot-chart/values.yaml
           '''
         }
