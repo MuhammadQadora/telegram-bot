@@ -91,7 +91,7 @@ spec:
             chmod +x ./snyk
             mv ./snyk /usr/local/bin/
             pip install -r Original-bot/requirements.txt
-            snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt 2> snykResults.txt
+            snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt > snykResults.txt
             '''
           }
         }
