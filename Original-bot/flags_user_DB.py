@@ -66,11 +66,14 @@ def add_member(bot_members, name):
         new_member = Member(name)
         bot_members.append(new_member)
         
+        # Convert notify dictionary to ensure all values are strings
+        notify_as_str = {k: v for k, v in new_member.notify.items()}
+        
         # Add the new member to the DynamoDB table
         item = {
             '_id': new_member.name,
             'name': new_member.name,
-            'notify': new_member.notify
+            'notify': notify_as_str
         }
         try:
             table.put_item(Item=item)
