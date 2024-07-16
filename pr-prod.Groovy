@@ -5,27 +5,7 @@ pipeline {
     ansiColor('xterm')
   }
   agent {
-    kubernetes {
-      yaml '''
-apiVersion: v1
-kind: Pod
-metadata:
-  name: sonar
-spec:
-  containers:
-  - name: sonar
-    image: sonarsource/sonar-scanner-cli
-    resources:
-      requests:
-        memory: 300Mi
-        cpu: 300m
-    command: ['sleep','infinity']
-  - name: python
-    image: python
-    
-    command: ['sleep','infinity']
-'''
-    }
+    kubernetes {}
   }
    triggers {
     GenericTrigger(
@@ -69,36 +49,35 @@ spec:
     }
     stage('enforce PEP8 with Black'){
       steps{
-        container('python'){
           echo "=====================================${STAGE_NAME}====================================="
-          sh 'pip install --no-cache-dir black; python3 -m black .'
-        }
+          sh '''
+          #!/bin/bash
+          python3 -m venv private
+          . private/bin/activate
+          pip install --no-cache-dir black; python3 -m black .
+          deactivate
+          '''
       }
     }
     stage('scan with sonarqube') {
       steps {
         withSonarQubeEnv(credentialsId: 'sonar', installationName: 'sonar') {
-          //container('sonar') {
             echo "=====================================${STAGE_NAME}====================================="
-            sh '/opt/sonar-scanner/bin/sonar-scanner -Dsonar.projectKey=prodproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
-          //}
+            sh '/opt/sonar-scanner/bin/sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=./Original-bot 2> sonarResults.txt'
         }
       }
     }
-    stage('Snyk test') {
+     stage('Snyk test') {
       steps {
         withCredentials([string(credentialsId: 'snykToken', variable: 'SNYK_TOKEN')]) {
-          container('python') {
             echo "=====================================${STAGE_NAME}====================================="
             sh '''
             #!/bin/bash
-            apt update && curl https://static.snyk.io/cli/latest/snyk-linux?_gl=1*1d1iprh*_gcl_au*MTUxOTIyNjI1Ny4xNzIwMDczMTE3*_ga*MTE0MTA4NjM3MS4xNzIwMDczMTE3*_ga_X9SH3KP7B4*MTcyMDExODU1My41LjEuMTcyMDExODU1Ni41Ny4wLjA. -o snyk
-            chmod +x ./snyk
-            mv ./snyk /usr/local/bin/
+            . private/bin/activate
             pip install -r Original-bot/requirements.txt
-            snyk test --package-manager=pip --command=python3.12 --file=./Original-bot/requirements.txt > snykResults.txt
+            snyk test --package-manager=pip --command=python3.11 --file=./Original-bot/requirements.txt > snykResults.txt
+            deactivate
             '''
-          }
         }
       }
     }

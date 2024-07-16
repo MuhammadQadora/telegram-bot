@@ -13,12 +13,6 @@ metadata:
   name: sonar
 spec:
   containers:
-  - name: sonar
-    image: sonarsource/sonar-scanner-cli
-    command: ['sleep','infinity']
-  - name: python
-    image: python
-    command: ['sleep','infinity']
   - name: kaniko
     image: gcr.io/kaniko-project/executor:debug
     resources:
