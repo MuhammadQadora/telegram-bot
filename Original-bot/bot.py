@@ -10,7 +10,8 @@ from openAi import AI
 from sec import secret_keys
 import json
 from dynamodbAPI import dynamodbAPI
-from local_user_DB import *
+# from local_user_DB import *
+from flags_user_DB import *
 
 list_members = []
 
@@ -56,12 +57,14 @@ class Util:
 class Bot:
     # Initiate connection with telegram
     def __init__(self):
+        global list_members
         self.bot = telebot.TeleBot(token=token)
         self.bot.remove_webhook()
         time.sleep(5)
         self.bot.set_webhook(f"{url}/{token}", timeout=60)
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
+        list_members = pull_data()
 
     # this function continuously checks for comming messages
     def updater(self, request):
@@ -69,7 +72,6 @@ class Bot:
         self.bot.process_new_updates([update])
 
     # This function responds with a greeting when the user uses /start
-
     def startCommand(self):
         @self.bot.message_handler(commands=["start"])
         def start(msg):
@@ -112,6 +114,7 @@ class Bot:
             )
             markup.add(gpt_4, yolov5, gpt_one_question, text_to_image)
             self.bot.send_message(msg.chat.id, "Available Options", reply_markup=markup)
+            list_members = pull_data()
 
     def photo_handler(self):
         @self.bot.message_handler(content_types=["photo"])
@@ -192,6 +195,7 @@ class Bot:
                     msg.chat.id,
                     "It seems you tried to upload a photo, if you want to detect objects got to /help\nand choose object detection",
                 )
+            update_member_notify(name=msg.chat.id,notify_updates=n)
 
     def callback(self):
         @self.bot.callback_query_handler(func=lambda call: True)
@@ -290,3 +294,4 @@ class Bot:
                 logger.info("Text to image deactivated")
             else:
                 self.bot.send_message(msg.chat.id, "Please refer to /help.")
+            update_member_notify(name=msg.chat.id,notify_updates=notify)
