@@ -103,9 +103,9 @@ services:
       - mongoCluster
     environment:
       BUCKET_NAME: ${BUCKET_NAME}
-      CONNECTION_STRING: ${CONNECTION_STRING}
       MONGO_USER: ${ADMIN_USER}
       MONGO_PASS: ${ADMIN_PASS}
+      CONNECTION_STRING: ${CONNECTION_STRING}
       PORT: ${PORT_YOLO}
     volumes:
       - ${AWS_CONF}:/root/.aws
@@ -141,10 +141,14 @@ services:
       TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
       TELEGRAM_APP_URL: ${TELEGRAM_APP_URL}
       GPT_KEY: ${GPT_KEY}
+      MONGO_USER: ${ADMIN_USER}
+      MONGO_PASS: ${ADMIN_PASS}
+      CONNECTION_STRING: ${CONNECTION_STRING}
     volumes:
       - ${AWS_CONF}:/root/.aws
       - D:\GitHub\telegram-bot\polybot\app.py:/app/app.py
       - D:\GitHub\telegram-bot\polybot\bot.py:/app/bot.py
+      - D:\GitHub\telegram-bot\polybot\mongoServerApi.py:/app/mongoServerApi.py
     secrets:
       - my_secret
 

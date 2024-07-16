@@ -8,12 +8,17 @@ from loguru import logger
 from telebot import types
 import boto3
 import botocore.exceptions
+from mongoServerApi import mongoAPI
 
 TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 IMAGES_BUCKET = os.environ['BUCKET_NAME']
 YOLO_URL = os.environ['YOLO_URL']
 GPT_KEY = os.environ['GPT_KEY']
+MONGO_USER = os.environ['MONGO_USER']
+MONGO_PASS = os.environ['MONGO_PASS']
+DATABASE = 'gpt'
+COLLECTION = 'chatlog'
 
 isPhoto = bool
 sentPhoto = bool
@@ -21,6 +26,7 @@ isGPT = bool
 chatWithGPT = bool
 textToIMG = bool
 client = OpenAI(api_key=GPT_KEY)
+mongoDB = mongoAPI(MONGO_USER, MONGO_PASS, DATABASE, COLLECTION)
 
 
 class Util:
@@ -28,18 +34,33 @@ class Util:
     def __init__(self, json_data):
         self.json_data = json_data
 
-    def SendMessageForGPT(self, msg):
+    def SendMessageForGPT(self, msg, chatlog=False):
         try:
-            completion = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
-                    {"role": "user", "content": f"{msg.text}"}
-                ]
-            )
+            if not chatlog:
+                completion = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
+                        {"role": "user", "content": f"{msg.text}"}
+                    ]
+                )
+            else:
+                try:
+                    if not mongoDB.checkIfExeist(msg.chat.id):
+                        mongoDB.createLog(msg.chat.id)
+                    
+                    mongoDB.insertLog(msg.chat.id, "user", msg.text)
+                    
+                    completion = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=mongoDB.getLog(msg.chat.id)
+                )
+                except:
+                    logger.warning("Error while saving prediction info into MongoDB.")
             if completion.choices:
                 self.bot.send_message(
                     msg.chat.id, completion.choices[0].message.content)
+                mongoDB.insertLog(msg.chat.id, "system", completion.choices[0].message.content)
             else:
                 self.bot.send_message(msg.chat.id, "ERROR WITH GPT")
         except Exception as e:
@@ -70,11 +91,12 @@ class Util:
             model="dall-e-3",
             prompt=msg.text,
             size="1024x1024",
-            quality="standard",
+            quality="hd",
             n=1,
             )
             image_url = response.data[0].url
-            self.bot.reply_to(msg, image_url)
+            img = requests.get(image_url).content
+            self.bot.send_photo(msg.chat.id, img)
         except:
             print("\n\n\nAn unexpected error occurred while trying")
 
@@ -247,7 +269,7 @@ class Bot:
                     self.isPhoto = False
                     self.sentPhoto = False
                 else:
-                    Util.SendMessageForGPT(self, msg)
+                    Util.SendMessageForGPT(self, msg, True)
             elif self.isPhoto  and not self.sentPhoto:
                 self.bot.send_message(msg.chat.id, "🫣ℙ𝕝𝕖𝕒𝕤𝕖 𝕤𝕖𝕟𝕕 𝕒 𝕡𝕙𝕠𝕥𝕠🫣")
             elif self.textToIMG:
