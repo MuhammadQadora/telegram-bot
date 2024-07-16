@@ -15,24 +15,12 @@ spec:
   containers:
   - name: sonar
     image: sonarsource/sonar-scanner-cli
-    resources:
-      requests:
-        memory: 300Mi
-        cpu: 300m
     command: ['sleep','infinity']
   - name: python
     image: python
-    resources:
-      requests:
-        memory: 300Mi
-        cpu: 300m
     command: ['sleep','infinity']
   - name: kaniko
     image: gcr.io/kaniko-project/executor:debug
-    resources:
-      requests:
-        memory: 400Mi
-        cpu: 500m
     imagePullPolicy: Always
     command:
     - sleep

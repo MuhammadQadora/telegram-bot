@@ -22,10 +22,7 @@ spec:
     command: ['sleep','infinity']
   - name: python
     image: python
-    resources:
-      requests:
-        memory: 300Mi
-        cpu: 300m
+    
     command: ['sleep','infinity']
 '''
     }

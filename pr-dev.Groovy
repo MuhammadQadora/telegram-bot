@@ -15,17 +15,9 @@ spec:
   containers:
   - name: sonar
     image: sonarsource/sonar-scanner-cli
-    resources:
-      requests:
-        memory: 300Mi
-        cpu: 300m
     command: ['sleep','infinity']
   - name: python
     image: python
-    resources:
-      requests:
-        memory: 300Mi
-        cpu: 300m
     command: ['sleep','infinity']
 '''
     }
