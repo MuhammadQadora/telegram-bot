@@ -149,7 +149,7 @@ spec:
           sh '''
           #!/bin/bash
           sed -i "s/tag: .*/tag: $v/" ./environments/dev/bot-chart/values.yaml
-          cat ./environments/dev/bot-chart/values.yaml
+          sed -i "s/appVersion: .*/appVersion: $v/" ./environments/dev/bot-chart/Chart.yaml
           '''
         }
       }
