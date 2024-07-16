@@ -74,7 +74,7 @@ def add_member(bot_members, name):
         item = {
             '_id': new_member.name,
             'name': new_member.name,
-            'notify': notify_as_str
+            'notify': (str)(notify_as_str)
         }
         try:
             table.put_item(Item=item)
