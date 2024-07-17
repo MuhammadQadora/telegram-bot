@@ -73,10 +73,13 @@ def add_member(bot_members, name):
             logger.info(f"Member [{name}] already exists in DynamoDB.")
         else:
             # Add the new member to the DynamoDB table
+            # Convert notify dictionary to ensure all keys are strings
+            notify_as_str = {k: str(v) for k, v in new_member.notify.items()}
+            
             item = {
                 '_id': new_member.name,
                 'name': new_member.name,
-                'notify': str(new_member.notify)
+                'notify': notify_as_str
             }
             try:
                 table.put_item(Item=item)
