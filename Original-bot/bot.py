@@ -90,7 +90,7 @@ class Bot:
         @self.bot.message_handler(commands=["help"])
         def help(msg):
             global list_members
-            print_member_params(list_members)
+            #print_member_params(list_members)
             if is_member_in_list_by_name(list_members, msg.chat.id) == True:
                 member = get_member_by_name(list_members, msg.chat.id)
                 notify = member.notify
