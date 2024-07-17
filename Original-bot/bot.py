@@ -16,20 +16,30 @@ from flags_user_DB import *
 list_members = []
 
 ##################
-token = os.environ["TELEGRAM_TOKEN"]
-url = os.environ["TELEGRAM_APP_URL"]
-bucket_name = secret_keys["BUCKET_NAME"]
-queue_url = os.environ["SQS_URL"]
-region_name = os.environ["REGION_NAME"]
-sns_topic_arn = os.environ["SNS_ARN"]
-table = os.environ["DYNAMO_TBL"]
-server_endpoint = os.environ["SERVER_ENDPOINT"]
+# token = os.environ["TELEGRAM_TOKEN"]
+# url = os.environ["TELEGRAM_APP_URL"]
+# bucket_name = secret_keys["BUCKET_NAME"]
+# queue_url = os.environ["SQS_URL"]
+# region_name = os.environ["REGION_NAME"]
+# sns_topic_arn = os.environ["SNS_ARN"]
+# table = os.environ["DYNAMO_TBL"]
+# server_endpoint = os.environ["SERVER_ENDPOINT"]
 #######################
 
-sqs_client = boto3.client("sqs", region_name=region_name)
+# sqs_client = boto3.client("sqs", region_name=region_name)
 
 ########################
 
+token = "7164236172:AAEmrU7Ie8uq8K2Duhm-wYjtqj_XfcaKHQ0"
+url = "https://183a-37-122-152-30.ngrok-free.app"
+bucket_name = secret_keys["BUCKET_NAME"]
+queue_url = "telegrambot-yolo5-mf"
+region_name = "us-east-1"
+sns_topic_arn = "arn:aws:sns:us-east-1:933060838752:telegrambot-sns-mf"
+table = "flags-table-terraform-dev"
+server_endpoint = "https://183a-37-122-152-30.ngrok-free.app/sns_update"
+
+sqs_client = boto3.client("sqs", region_name=region_name)
 
 class Util:
     def __init__(self, json_data):
@@ -65,6 +75,7 @@ class Bot:
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
         list_members = pull_data()
+        logger.info(f"DB>>>\n {list_members}")
 
     # this function continuously checks for comming messages
     def updater(self, request):
@@ -76,12 +87,14 @@ class Bot:
         @self.bot.message_handler(commands=["start"])
         def start(msg):
             global list_members
-            logger.info(list_members)
+            logger.warning(f"LOCAL LIST:\n{list_members}")
             self.bot.send_message(
                 msg.chat.id,
                 f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
             )
-            add_member(list_members, msg.chat.id)
+            if not is_member_in_list_by_name(list_members, msg.chat.id):
+                add_member(list_members, msg.chat.id)
+            
             logger.info(len(list_members))
 
     # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
@@ -91,7 +104,7 @@ class Bot:
         def help(msg):
             global list_members
             #print_member_params(list_members)
-            if is_member_in_list_by_name(list_members, msg.chat.id) == True:
+            if is_member_in_list_by_name(list_members, msg.chat.id):
                 member = get_member_by_name(list_members, msg.chat.id)
                 # Setting all notifications to False
                 for notification in member.notify:
@@ -243,7 +256,7 @@ class Bot:
             member = get_member_by_name(list_members, msg.chat.id)
             # If member doesn't exist, notify is an empty dict
             notify = member.notify if member else {}
-
+            logger.info(notify)
             if notify.get(Notify.GPT4):
                 logger.info(f"Chat with GPT-4 activated")
                 if msg.text == "/quit":
