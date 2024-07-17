@@ -79,7 +79,7 @@ class Bot:
             logger.info(list_members)
             self.bot.send_message(
                 msg.chat.id,
-                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot!!!!!!! Hi class,To see what this Bot can do use /help .",
+                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
             )
             add_member(list_members, msg.chat.id)
             logger.info(len(list_members))
@@ -95,7 +95,7 @@ class Bot:
                 member = get_member_by_name(list_members, msg.chat.id)
                 notify = member.notify
                 # Setting all notifications to False
-                for notification in Notify:
+                for notification in notify:
                     notify[notification] = False
             else:
                 add_member(list_members, msg.chat.id)
