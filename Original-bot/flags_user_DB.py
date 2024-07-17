@@ -66,15 +66,15 @@ def add_member(bot_members, name):
         new_member = Member(name)
         bot_members.append(new_member)
         
-        # Convert notify dictionary to ensure all values are strings
-        notify_as_str = {k: str(v) for k, v in new_member.notify.items()}
+        # # Convert notify dictionary to ensure all values are strings
+        # notify_as_str = {k: str(v) for k, v in new_member.notify.items()}
 
         
         # Add the new member to the DynamoDB table
         item = {
             '_id': new_member.name,
             'name': new_member.name,
-            'notify': str(notify_as_str)
+            'notify': str(new_member.notify)
         }
         try:
             table.put_item(Item=item)
@@ -82,6 +82,12 @@ def add_member(bot_members, name):
         except Exception as e:
             logger.error(f"Error adding {name} to DynamoDB table: {e}")
 
+def convert_notify_to_str(notify = Notify):
+    # Convert notify dictionary to ensure all values are strings
+    notify = {k: str(v) for k, v in notify.items()}
+
+def convert_to_original_type(notify_as_str):
+    return {Notify(key): value for key, value in notify_as_str.items()}
 
 def get_member_by_name(member_list, name):
     # Get the first Member object from the list with the given name.5

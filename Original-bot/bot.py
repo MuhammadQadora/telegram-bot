@@ -195,7 +195,7 @@ class Bot:
                     msg.chat.id,
                     "It seems you tried to upload a photo, if you want to detect objects got to /help\nand choose object detection",
                 )
-            update_member_notify(name=msg.chat.id,notify_updates=n)
+            update_member_notify(name=msg.chat.id,notify_updates=str(n))
 
     def callback(self):
         @self.bot.callback_query_handler(func=lambda call: True)
@@ -294,4 +294,4 @@ class Bot:
                 logger.info("Text to image deactivated")
             else:
                 self.bot.send_message(msg.chat.id, "Please refer to /help.")
-            update_member_notify(name=msg.chat.id,notify_updates=notify)
+            update_member_notify(name=msg.chat.id,notify_updates=str(notify))
