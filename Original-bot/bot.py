@@ -93,10 +93,9 @@ class Bot:
             #print_member_params(list_members)
             if is_member_in_list_by_name(list_members, msg.chat.id) == True:
                 member = get_member_by_name(list_members, msg.chat.id)
-                notify = member.notify
                 # Setting all notifications to False
-                for notification in notify:
-                    notify[notification] = False
+                for notification in member.notify:
+                    member.notify[notification] = False
             else:
                 add_member(list_members, msg.chat.id)
             markup = telebot.types.InlineKeyboardMarkup(row_width=2)
@@ -114,7 +113,7 @@ class Bot:
             )
             markup.add(gpt_4, yolov5, gpt_one_question, text_to_image)
             self.bot.send_message(msg.chat.id, "Available Options", reply_markup=markup)
-            list_members = pull_data()
+            #list_members = pull_data()
 
     def photo_handler(self):
         @self.bot.message_handler(content_types=["photo"])

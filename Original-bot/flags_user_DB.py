@@ -88,15 +88,16 @@ def convert_notify_to_str(notify = Notify):
     # Convert notify dictionary to ensure all values are strings
     notify = {k: str(v) for k, v in notify.items()}
 
-def convert_to_original_type(notify_as_str):
+def convert_to_original_type(notify_as_str : str):
     return {Notify(key): value.lower() == 'true' if isinstance(value, str) else value for key, value in notify_as_str.items()}
 
 def get_member_by_name(member_list, name):
     # Get the first Member object from the list with the given name.5
     for member in member_list:
         if member.name == name:
-            member.notify = convert_to_original_type(member.notify)
-            return member
+            m = Member(name)
+            m.notify = convert_to_original_type(member.notify)
+            return m
     return None  # Return None if no member with the specified name is found
 
 
