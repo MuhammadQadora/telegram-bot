@@ -62,21 +62,17 @@ def update_member_notify(name, notify_updates):
         logger.error(f"Error updating item: {e}")
 
 
-def is_member_in_list_by_name(bot_members: list, name: str):
+def is_member_in_list_by_name(name: str):
+    bot_members = pull_data()
     for member in bot_members:
         if member['name'] == name:
             return True
     return False
 
 
-def add_member(bot_members: list, name: str):
-    if not is_member_in_list_by_name(bot_members, name):
+def add_member(name: str):
+    if not is_member_in_list_by_name(name):
         new_member = Member(name)
-        bot_members.append({
-            '_id': Decimal(new_member.name),
-            'name': new_member.name,
-            'notify': new_member.notify  # Store enum keys directly
-        })
         item = {
             '_id': Decimal(new_member.name),
             'name': new_member.name,
@@ -115,7 +111,6 @@ def get_member_from_dynamo(name: str):
             item = response['Item']
             member = Member(item['name'])
             member.notify = convert_dict_keys_to_enum(item['notify'])
-            # item['notify'] = convert_dict_keys_to_enum(item['notify'])
             return member
         else:
             logger.warning(f"Member with name [{name}] not found.")

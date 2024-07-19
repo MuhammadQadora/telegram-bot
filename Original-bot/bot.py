@@ -60,8 +60,6 @@ class Bot:
         self.bot.set_webhook(f"{url}/{token}", timeout=60)
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
-        self.list_members = pull_data()
-        logger.info(f"DB>>>\n {self.list_members}")
 
     # this function continuously checks for comming messages
     def updater(self, request):
@@ -72,29 +70,25 @@ class Bot:
     def startCommand(self):
         @self.bot.message_handler(commands=["start"])
         def start(msg):
-            logger.warning(f"LOCAL LIST:\n{self.list_members}")
             self.bot.send_message(
                 msg.chat.id,
-                f"Hi there {
-                    msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
+                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
             )
-            if not is_member_in_list_by_name(self.list_members, msg.chat.id):
-                add_member(self.list_members, msg.chat.id)
-
-            logger.info(len(self.list_members))
+            if not is_member_in_list_by_name(msg.chat.id):
+                add_member(msg.chat.id)
 
     # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
     # then return answer to the user
     def getHelp(self):
         @self.bot.message_handler(commands=["help"])
         def help(msg):
-            if is_member_in_list_by_name(self.list_members, msg.chat.id):
+            if is_member_in_list_by_name(msg.chat.id):
                 # member = get_member_by_name(self.list_members, msg.chat.id)
                 member = get_member_from_dynamo(name=msg.chat.id)
                 for notification in member.notify:
                     member.notify[notification] = False
             else:
-                add_member(self.list_members, msg.chat.id)
+                add_member(msg.chat.id)
             markup = telebot.types.InlineKeyboardMarkup(row_width=2)
             gpt_4 = telebot.types.InlineKeyboardButton(
                 "Chat with gpt-4", callback_data="answer_gpt4"
@@ -198,8 +192,6 @@ class Bot:
         @self.bot.callback_query_handler(func=lambda call: True)
         def back(clk):
             if clk.message:
-                # member = get_member_by_name(
-                #     self.list_members, clk.message.chat.id)
                 member = get_member_from_dynamo(name=clk.message.chat.id)
 
                 # If member doesn't exist, notify is an empty dict
