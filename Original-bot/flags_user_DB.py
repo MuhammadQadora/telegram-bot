@@ -5,8 +5,8 @@ import boto3
 import botocore.exceptions
 from decimal import Decimal
 
-dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
-table = dynamodb.Table("flags-table-terraform-dev")
+dynamodb = boto3.resource('dynamodb', region_name=os.environ["REGION_NAME"])
+table = dynamodb.Table(os.environ["FLAGS_TABLE_NAME"])
 
 
 class Notify(Enum):
@@ -94,39 +94,6 @@ def add_member(bot_members: list, name: str):
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
 
-# def add_member(bot_members: list, name: str):
-#     if not is_member_in_list_by_name(bot_members, name):
-#         new_member = Member(name)
-#         bot_members.append({
-#             '_id': Decimal(new_member.name),
-#             'name': new_member.name,
-#             'notify': convert_enum_keys_to_str(new_member.notify)
-#         })
-#         item = {
-#             '_id': Decimal(new_member.name),
-#             'name': new_member.name,
-#             'notify': convert_enum_keys_to_str(new_member.notify)
-#         }
-#         try:
-#             table.put_item(
-#                 Item=item,
-#                 ConditionExpression='attribute_not_exists(#name)',
-#                 ExpressionAttributeNames={'#name': 'name'}
-#             )
-#             logger.info(f"Added member [{item['name']}] to DynamoDB table.")
-#         except botocore.exceptions.ClientError as e:
-#             if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-#                 logger.error(
-#                     f"Item with name [{item['name']}] already exists.")
-#             else:
-#                 logger.error(f"ClientError: {e.response['Error']['Message']}")
-#         except Exception as e:
-#             logger.error(f"Unexpected error: {e}")
-
-def convert_notify_to_str(notify=Notify):
-    # Convert notify dictionary to ensure all values are strings
-    notify = {k: str(v) for k, v in notify.items()}
-
 def convert_dict_keys_to_enum(original_dict):
     return {Notify[key]: value for key, value in original_dict.items()}
 
@@ -157,7 +124,6 @@ def get_member_by_name(member_list: list, name: str):
             logger.warning(m.notify)
             return m
     return None  # Return None if no member with the specified name is found
-
 
 def get_notify_by_member_name(member_list: list, name: str):
     # Get the first Member object from the list with the given name.5

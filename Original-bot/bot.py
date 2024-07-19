@@ -10,36 +10,22 @@ from openAi import AI
 from sec import secret_keys
 import json
 from dynamodbAPI import dynamodbAPI
-# from local_user_DB import *
 from flags_user_DB import *
 
-# list_members = []
-
 ##################
-# token = os.environ["TELEGRAM_TOKEN"]
-# url = os.environ["TELEGRAM_APP_URL"]
-# bucket_name = secret_keys["BUCKET_NAME"]
-# queue_url = os.environ["SQS_URL"]
-# region_name = os.environ["REGION_NAME"]
-# sns_topic_arn = os.environ["SNS_ARN"]
-# table = os.environ["DYNAMO_TBL"]
-# server_endpoint = os.environ["SERVER_ENDPOINT"]
+token = os.environ["TELEGRAM_TOKEN"]
+url = os.environ["TELEGRAM_APP_URL"]
+bucket_name = secret_keys["BUCKET_NAME"]
+queue_url = os.environ["SQS_URL"]
+region_name = os.environ["REGION_NAME"]
+sns_topic_arn = os.environ["SNS_ARN"]
+table = os.environ["DYNAMO_TBL"]
+server_endpoint = os.environ["SERVER_ENDPOINT"]
 #######################
 
-# sqs_client = boto3.client("sqs", region_name=region_name)
+sqs_client = boto3.client("sqs", region_name=region_name)
 
 ########################
-
-token = "7164236172:AAEmrU7Ie8uq8K2Duhm-wYjtqj_XfcaKHQ0"
-url = "https://183a-37-122-152-30.ngrok-free.app"
-bucket_name = secret_keys["BUCKET_NAME"]
-queue_url = "telegrambot-yolo5-mf"
-region_name = "us-east-1"
-sns_topic_arn = "arn:aws:sns:us-east-1:933060838752:telegrambot-sns-mf"
-table = "flags-table-terraform-dev"
-server_endpoint = "https://183a-37-122-152-30.ngrok-free.app/sns_update"
-
-sqs_client = boto3.client("sqs", region_name=region_name)
 
 class Util:
     def __init__(self, json_data):
