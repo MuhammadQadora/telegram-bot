@@ -27,6 +27,7 @@ sqs_client = boto3.client("sqs", region_name=region_name)
 
 ########################
 
+
 class Util:
     def __init__(self, json_data):
         self.json_data = json_data
@@ -74,11 +75,12 @@ class Bot:
             logger.warning(f"LOCAL LIST:\n{self.list_members}")
             self.bot.send_message(
                 msg.chat.id,
-                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
+                f"Hi there {
+                    msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
             )
             if not is_member_in_list_by_name(self.list_members, msg.chat.id):
                 add_member(self.list_members, msg.chat.id)
-            
+
             logger.info(len(self.list_members))
 
     # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
@@ -87,7 +89,8 @@ class Bot:
         @self.bot.message_handler(commands=["help"])
         def help(msg):
             if is_member_in_list_by_name(self.list_members, msg.chat.id):
-                member = get_member_by_name(self.list_members, msg.chat.id)
+                # member = get_member_by_name(self.list_members, msg.chat.id)
+                member = get_member_from_dynamo(name=msg.chat.id)
                 for notification in member.notify:
                     member.notify[notification] = False
             else:
@@ -106,7 +109,8 @@ class Bot:
                 "Ask a question", callback_data="answer_question"
             )
             markup.add(gpt_4, yolov5, gpt_one_question, text_to_image)
-            self.bot.send_message(msg.chat.id, "Available Options", reply_markup=markup)
+            self.bot.send_message(
+                msg.chat.id, "Available Options", reply_markup=markup)
 
     def photo_handler(self):
         @self.bot.message_handler(content_types=["photo"])
@@ -133,7 +137,8 @@ class Bot:
                     client.upload_fileobj(
                         memory,
                         bucket_name,
-                        f"OriginalBot/received/{os.path.basename(file_info.file_path)}",
+                        f"OriginalBot/received/{
+                            os.path.basename(file_info.file_path)}",
                     )
                 except botocore.exceptions.ClientError as e:
                     logger.info(e)
@@ -150,7 +155,8 @@ class Bot:
                             }
                         ),
                     )
-                    self.bot.send_message(msg.chat.id, "Sent Image for processing.....")
+                    self.bot.send_message(
+                        msg.chat.id, "Sent Image for processing.....")
                     logger.info(response)
                 except botocore.exceptions.ClientError as e:
                     logger.error(e)
@@ -186,13 +192,16 @@ class Bot:
                     msg.chat.id,
                     "It seems you tried to upload a photo, if you want to detect objects got to /help\nand choose object detection",
                 )
-            update_member_notify(name=msg.chat.id,notify_updates=str(n))
+            update_member_notify(name=msg.chat.id, notify_updates=str(n))
 
     def callback(self):
         @self.bot.callback_query_handler(func=lambda call: True)
         def back(clk):
             if clk.message:
-                member = get_member_by_name(self.list_members, clk.message.chat.id)
+                # member = get_member_by_name(
+                #     self.list_members, clk.message.chat.id)
+                member = get_member_from_dynamo(name=clk.message.chat.id)
+
                 # If member doesn't exist, notify is an empty dict
                 notify = member.notify if member else {}
                 if clk.data == "answer_gpt4":
@@ -228,14 +237,17 @@ class Bot:
                     self.bot.send_message(
                         clk.message.chat.id, "Enter your text to image prompt: "
                     )
-                
+
                 logger.error(notify)
-                update_member_notify(name=clk.message.chat.id, notify_updates=notify)
+                update_member_notify(
+                    name=clk.message.chat.id, notify_updates=notify)
 
     def text_handler(self):
         @self.bot.message_handler(content_types=["text"])
         def txt(msg):
-            member = get_member_by_name(self.list_members, msg.chat.id)
+            # member = get_member_by_name(self.list_members, msg.chat.id)
+            member = get_member_from_dynamo(name=msg.chat.id)
+
             # If member doesn't exist, notify is an empty dict
             notify = member.notify if member else {}
             logger.info(notify)
@@ -263,13 +275,15 @@ class Bot:
                 )
                 self.bot.send_message(msg.chat.id, f"{assistant_response}")
                 feed_to_dynamo_update = (
-                    dynamo_obj.convert_regular_dictionary_to_dynamodb(chat_history)
+                    dynamo_obj.convert_regular_dictionary_to_dynamodb(
+                        chat_history)
                 )
                 Item = dynamo_obj.template(msg.chat.id, feed_to_dynamo_update)
                 dynamo_obj.put_item(Item)
                 logger.info("Chat with GPT-4 Deactivated")
             elif notify.get(Notify.YOLO):
-                self.bot.send_message(msg.chat.id, "You must upload a photo not text")
+                self.bot.send_message(
+                    msg.chat.id, "You must upload a photo not text")
             elif notify.get(Notify.QUESTION):
                 logger.info("Ask a question activated")
                 user_role = [{"role": "user", "content": f"{msg.text}"}]
@@ -288,4 +302,4 @@ class Bot:
                 logger.info("Text to image deactivated")
             else:
                 self.bot.send_message(msg.chat.id, "Please refer to /help.")
-            update_member_notify(name=msg.chat.id,notify_updates=notify)
+            update_member_notify(name=msg.chat.id, notify_updates=notify)

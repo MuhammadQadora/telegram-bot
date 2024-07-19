@@ -43,6 +43,7 @@ def pull_data():
         item['notify'] = convert_dict_keys_to_enum(item['notify'])
     return data
 
+
 def update_member_notify(name, notify_updates):
     try:
         # Convert enum keys to string representation for updating
@@ -60,11 +61,13 @@ def update_member_notify(name, notify_updates):
     except Exception as e:
         logger.error(f"Error updating item: {e}")
 
+
 def is_member_in_list_by_name(bot_members: list, name: str):
     for member in bot_members:
         if member['name'] == name:
             return True
     return False
+
 
 def add_member(bot_members: list, name: str):
     if not is_member_in_list_by_name(bot_members, name):
@@ -77,7 +80,8 @@ def add_member(bot_members: list, name: str):
         item = {
             '_id': Decimal(new_member.name),
             'name': new_member.name,
-            'notify': convert_enum_keys_to_str(new_member.notify)  # Convert enum keys to string for DynamoDB
+            # Convert enum keys to string for DynamoDB
+            'notify': convert_enum_keys_to_str(new_member.notify)
         }
         try:
             table.put_item(
@@ -88,31 +92,38 @@ def add_member(bot_members: list, name: str):
             logger.info(f"Added member [{item['name']}] to DynamoDB table.")
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-                logger.error(f"Item with name [{item['name']}] already exists.")
+                logger.error(
+                    f"Item with name [{item['name']}] already exists.")
             else:
                 logger.error(f"ClientError: {e.response['Error']['Message']}")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
 
+
 def convert_dict_keys_to_enum(original_dict):
     return {Notify[key]: value for key, value in original_dict.items()}
+
 
 def convert_enum_keys_to_str(enum_dict):
     return {key.name: value for key, value in enum_dict.items()}
 
-def get_member_from_dynamo(name):
+
+def get_member_from_dynamo(name: str):
     try:
         response = table.get_item(Key={'_id': Decimal(name)})
         if 'Item' in response:
             item = response['Item']
-            item['notify'] = convert_dict_keys_to_enum(item['notify'])
-            return item
+            member = Member(item['name'])
+            member.notify = convert_dict_keys_to_enum(item['notify'])
+            # item['notify'] = convert_dict_keys_to_enum(item['notify'])
+            return member
         else:
             logger.warning(f"Member with name [{name}] not found.")
             return None
     except Exception as e:
         logger.error(f"Error retrieving item: {e}")
         return None
+
 
 def get_member_by_name(member_list: list, name: str):
     # Get the first Member object from the list with the given name.5
@@ -124,6 +135,7 @@ def get_member_by_name(member_list: list, name: str):
             logger.warning(m.notify)
             return m
     return None  # Return None if no member with the specified name is found
+
 
 def get_notify_by_member_name(member_list: list, name: str):
     # Get the first Member object from the list with the given name.5
