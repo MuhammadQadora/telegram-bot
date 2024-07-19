@@ -5,8 +5,8 @@ import os
 
 class dynamodbAPI:
     def __init__(self):
-        self.client = boto3.client("dynamodb", region_name="us-east-1")
-        self.tableName = "openai_chatlogs_mf"
+        self.client = boto3.client("dynamodb", region_name=os.environ['REGION_NAME'])
+        self.tableName = os.environ['GPT_TBL']
 
     def init(self, msg_chat_id, role, msg_text):
         Item = {
