@@ -247,6 +247,7 @@ class Bot:
                 logger.info(f"Chat with GPT-4 activated")
                 if msg.text == "/quit":
                     notify[Notify.GPT4] = False
+                    update_member_notify(name=msg.chat.id, notify_updates=notify)
                     return
                 dynamo_obj = dynamodbAPI()
                 # Get the chat log
