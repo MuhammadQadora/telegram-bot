@@ -13,7 +13,7 @@ from dynamodbAPI import dynamodbAPI
 # from local_user_DB import *
 from flags_user_DB import *
 
-list_members = []
+# list_members = []
 
 ##################
 # token = os.environ["TELEGRAM_TOKEN"]
@@ -67,15 +67,14 @@ class Util:
 class Bot:
     # Initiate connection with telegram
     def __init__(self):
-        global list_members
         self.bot = telebot.TeleBot(token=token)
         self.bot.remove_webhook()
         time.sleep(5)
         self.bot.set_webhook(f"{url}/{token}", timeout=60)
         logger.info(f"Connected to bot:\n{self.bot.get_me()}")
         self.chatgpt = AI()
-        list_members = pull_data()
-        logger.info(f"DB>>>\n {list_members}")
+        self.list_members = pull_data()
+        logger.info(f"DB>>>\n {self.list_members}")
 
     # this function continuously checks for comming messages
     def updater(self, request):
@@ -86,31 +85,27 @@ class Bot:
     def startCommand(self):
         @self.bot.message_handler(commands=["start"])
         def start(msg):
-            global list_members
-            logger.warning(f"LOCAL LIST:\n{list_members}")
+            logger.warning(f"LOCAL LIST:\n{self.list_members}")
             self.bot.send_message(
                 msg.chat.id,
                 f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
             )
-            if not is_member_in_list_by_name(list_members, msg.chat.id):
-                add_member(list_members, msg.chat.id)
+            if not is_member_in_list_by_name(self.list_members, msg.chat.id):
+                add_member(self.list_members, msg.chat.id)
             
-            logger.info(len(list_members))
+            logger.info(len(self.list_members))
 
     # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
     # then return answer to the user
     def getHelp(self):
         @self.bot.message_handler(commands=["help"])
         def help(msg):
-            global list_members
-            #print_member_params(list_members)
-            if is_member_in_list_by_name(list_members, msg.chat.id):
-                member = get_member_by_name(list_members, msg.chat.id)
-                # Setting all notifications to False
+            if is_member_in_list_by_name(self.list_members, msg.chat.id):
+                member = get_member_by_name(self.list_members, msg.chat.id)
                 for notification in member.notify:
                     member.notify[notification] = False
             else:
-                add_member(list_members, msg.chat.id)
+                add_member(self.list_members, msg.chat.id)
             markup = telebot.types.InlineKeyboardMarkup(row_width=2)
             gpt_4 = telebot.types.InlineKeyboardButton(
                 "Chat with gpt-4", callback_data="answer_gpt4"
@@ -126,14 +121,12 @@ class Bot:
             )
             markup.add(gpt_4, yolov5, gpt_one_question, text_to_image)
             self.bot.send_message(msg.chat.id, "Available Options", reply_markup=markup)
-            #list_members = pull_data()
 
     def photo_handler(self):
         @self.bot.message_handler(content_types=["photo"])
         def photo(msg):
-            global list_members
-
-            n = get_notify_by_member_name(list_members, msg.chat.id)
+            n = get_notify_by_member_name(self.list_members, msg.chat.id)
+            logger.error(n)
             if (
                 n[Notify.YOLO] == True
                 and n[Notify.GPT4] == False
@@ -213,7 +206,7 @@ class Bot:
         @self.bot.callback_query_handler(func=lambda call: True)
         def back(clk):
             if clk.message:
-                member = get_member_by_name(list_members, clk.message.chat.id)
+                member = get_member_by_name(self.list_members, clk.message.chat.id)
                 # If member doesn't exist, notify is an empty dict
                 notify = member.notify if member else {}
                 if clk.data == "answer_gpt4":
@@ -249,11 +242,14 @@ class Bot:
                     self.bot.send_message(
                         clk.message.chat.id, "Enter your text to image prompt: "
                     )
+                
+                logger.error(notify)
+                update_member_notify(name=clk.message.chat.id, notify_updates=notify)
 
     def text_handler(self):
         @self.bot.message_handler(content_types=["text"])
         def txt(msg):
-            member = get_member_by_name(list_members, msg.chat.id)
+            member = get_member_by_name(self.list_members, msg.chat.id)
             # If member doesn't exist, notify is an empty dict
             notify = member.notify if member else {}
             logger.info(notify)
@@ -306,4 +302,4 @@ class Bot:
                 logger.info("Text to image deactivated")
             else:
                 self.bot.send_message(msg.chat.id, "Please refer to /help.")
-            update_member_notify(name=msg.chat.id,notify_updates=str(notify))
+            update_member_notify(name=msg.chat.id,notify_updates=notify)
