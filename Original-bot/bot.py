@@ -10,9 +10,7 @@ from openAi import AI
 from sec import secret_keys
 import json
 from dynamodbAPI import dynamodbAPI
-from local_user_DB import *
-
-list_members = []
+from flags_user_DB import *
 
 ##################
 token = os.environ["TELEGRAM_TOKEN"]
@@ -69,34 +67,28 @@ class Bot:
         self.bot.process_new_updates([update])
 
     # This function responds with a greeting when the user uses /start
-
     def startCommand(self):
         @self.bot.message_handler(commands=["start"])
         def start(msg):
-            global list_members
-            logger.info(list_members)
             self.bot.send_message(
                 msg.chat.id,
                 f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
             )
-            add_member(list_members, msg.chat.id)
-            logger.info(len(list_members))
+            if not is_member_in_list_by_name(msg.chat.id):
+                add_member(msg.chat.id)
 
     # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
     # then return answer to the user
     def getHelp(self):
         @self.bot.message_handler(commands=["help"])
         def help(msg):
-            global list_members
-            print_member_params(list_members)
-            if is_member_in_list_by_name(list_members, msg.chat.id) == True:
-                member = get_member_by_name(list_members, msg.chat.id)
-                notify = member.notify
-                # Setting all notifications to False
-                for notification in Notify:
-                    notify[notification] = False
+            if is_member_in_list_by_name(msg.chat.id):
+                # member = get_member_by_name(self.list_members, msg.chat.id)
+                member = get_member_from_dynamo(name=msg.chat.id)
+                for notification in member.notify:
+                    member.notify[notification] = False
             else:
-                add_member(list_members, msg.chat.id)
+                add_member(msg.chat.id)
             markup = telebot.types.InlineKeyboardMarkup(row_width=2)
             gpt_4 = telebot.types.InlineKeyboardButton(
                 "Chat with gpt-4", callback_data="answer_gpt4"
@@ -111,18 +103,21 @@ class Bot:
                 "Ask a question", callback_data="answer_question"
             )
             markup.add(gpt_4, yolov5, gpt_one_question, text_to_image)
-            self.bot.send_message(msg.chat.id, "Available Options", reply_markup=markup)
+            self.bot.send_message(
+                msg.chat.id, "Available Options", reply_markup=markup)
 
     def photo_handler(self):
         @self.bot.message_handler(content_types=["photo"])
         def photo(msg):
-            global list_members
+            member = get_member_from_dynamo(name=msg.chat.id)
 
-            n = get_notify_by_member_name(list_members, msg.chat.id)
+            # If member doesn't exist, notify is an empty dict
+            notify = member.notify if member else {}
+
             if (
-                n[Notify.YOLO] == True
-                and n[Notify.GPT4] == False
-                and n[Notify.QUESTION] == False
+                notify[Notify.YOLO] == True
+                and notify[Notify.GPT4] == False
+                and notify[Notify.QUESTION] == False
             ):
                 self.bot.send_message(
                     msg.chat.id, "Processing your image, kindly wait."
@@ -139,7 +134,8 @@ class Bot:
                     client.upload_fileobj(
                         memory,
                         bucket_name,
-                        f"OriginalBot/received/{os.path.basename(file_info.file_path)}",
+                        f"OriginalBot/received/{
+                            os.path.basename(file_info.file_path)}",
                     )
                 except botocore.exceptions.ClientError as e:
                     logger.info(e)
@@ -156,7 +152,8 @@ class Bot:
                             }
                         ),
                     )
-                    self.bot.send_message(msg.chat.id, "Sent Image for processing.....")
+                    self.bot.send_message(
+                        msg.chat.id, "Sent Image for processing.....")
                     logger.info(response)
                 except botocore.exceptions.ClientError as e:
                     logger.error(e)
@@ -192,12 +189,14 @@ class Bot:
                     msg.chat.id,
                     "It seems you tried to upload a photo, if you want to detect objects got to /help\nand choose object detection",
                 )
+            update_member_notify(name=msg.chat.id, notify_updates=str(n))
 
     def callback(self):
         @self.bot.callback_query_handler(func=lambda call: True)
         def back(clk):
             if clk.message:
-                member = get_member_by_name(list_members, clk.message.chat.id)
+                member = get_member_from_dynamo(name=clk.message.chat.id)
+
                 # If member doesn't exist, notify is an empty dict
                 notify = member.notify if member else {}
                 if clk.data == "answer_gpt4":
@@ -208,6 +207,10 @@ class Bot:
                     self.bot.send_message(
                         clk.message.chat.id,
                         "You are now chatting with gpt-4,to quit use /quit",
+                    )
+                    self.bot.send_message(
+                        clk.message.chat.id,
+                        "Chat With GPT-4 Activated",
                     )
                 elif clk.data == "answer_yolov5":
                     notify[Notify.GPT4] = False
@@ -234,17 +237,29 @@ class Bot:
                         clk.message.chat.id, "Enter your text to image prompt: "
                     )
 
+                logger.error(notify)
+                update_member_notify(
+                    name=clk.message.chat.id, notify_updates=notify)
+
     def text_handler(self):
         @self.bot.message_handler(content_types=["text"])
         def txt(msg):
-            member = get_member_by_name(list_members, msg.chat.id)
+            # member = get_member_by_name(self.list_members, msg.chat.id)
+            member = get_member_from_dynamo(name=msg.chat.id)
+
             # If member doesn't exist, notify is an empty dict
             notify = member.notify if member else {}
-
+            logger.info(notify)
             if notify.get(Notify.GPT4):
-                logger.info(f"Chat with GPT-4 activated")
+                logger.info(f"Chat with GPT-4 Activated")
                 if msg.text == "/quit":
                     notify[Notify.GPT4] = False
+                    update_member_notify(
+                        name=msg.chat.id, notify_updates=notify)
+                    self.bot.send_message(
+                        msg.chat.id,
+                        "Chat With GPT-4 Deactivated",
+                    )
                     return
                 dynamo_obj = dynamodbAPI()
                 # Get the chat log
@@ -265,13 +280,15 @@ class Bot:
                 )
                 self.bot.send_message(msg.chat.id, f"{assistant_response}")
                 feed_to_dynamo_update = (
-                    dynamo_obj.convert_regular_dictionary_to_dynamodb(chat_history)
+                    dynamo_obj.convert_regular_dictionary_to_dynamodb(
+                        chat_history)
                 )
                 Item = dynamo_obj.template(msg.chat.id, feed_to_dynamo_update)
                 dynamo_obj.put_item(Item)
                 logger.info("Chat with GPT-4 Deactivated")
             elif notify.get(Notify.YOLO):
-                self.bot.send_message(msg.chat.id, "You must upload a photo not text")
+                self.bot.send_message(
+                    msg.chat.id, "You must upload a photo not text")
             elif notify.get(Notify.QUESTION):
                 logger.info("Ask a question activated")
                 user_role = [{"role": "user", "content": f"{msg.text}"}]
@@ -290,3 +307,4 @@ class Bot:
                 logger.info("Text to image deactivated")
             else:
                 self.bot.send_message(msg.chat.id, "Please refer to /help.")
+            update_member_notify(name=msg.chat.id, notify_updates=notify)
