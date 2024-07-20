@@ -109,12 +109,15 @@ class Bot:
     def photo_handler(self):
         @self.bot.message_handler(content_types=["photo"])
         def photo(msg):
-            n = get_notify_by_member_name(self.list_members, msg.chat.id)
-            logger.error(n)
+            member = get_member_from_dynamo(name=msg.chat.id)
+
+            # If member doesn't exist, notify is an empty dict
+            notify = member.notify if member else {}
+
             if (
-                n[Notify.YOLO] == True
-                and n[Notify.GPT4] == False
-                and n[Notify.QUESTION] == False
+                notify[Notify.YOLO] == True
+                and notify[Notify.GPT4] == False
+                and notify[Notify.QUESTION] == False
             ):
                 self.bot.send_message(
                     msg.chat.id, "Processing your image, kindly wait."
@@ -205,6 +208,10 @@ class Bot:
                         clk.message.chat.id,
                         "You are now chatting with gpt-4,to quit use /quit",
                     )
+                    self.bot.send_message(
+                        clk.message.chat.id,
+                        "Chat With GPT-4 Activated",
+                    )
                 elif clk.data == "answer_yolov5":
                     notify[Notify.GPT4] = False
                     notify[Notify.YOLO] = True
@@ -244,10 +251,15 @@ class Bot:
             notify = member.notify if member else {}
             logger.info(notify)
             if notify.get(Notify.GPT4):
-                logger.info(f"Chat with GPT-4 activated")
+                logger.info(f"Chat with GPT-4 Activated")
                 if msg.text == "/quit":
                     notify[Notify.GPT4] = False
-                    update_member_notify(name=msg.chat.id, notify_updates=notify)
+                    update_member_notify(
+                        name=msg.chat.id, notify_updates=notify)
+                    self.bot.send_message(
+                        msg.chat.id,
+                        "Chat With GPT-4 Deactivated",
+                    )
                     return
                 dynamo_obj = dynamodbAPI()
                 # Get the chat log

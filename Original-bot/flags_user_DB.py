@@ -118,23 +118,3 @@ def get_member_from_dynamo(name: str):
     except Exception as e:
         logger.error(f"Error retrieving item: {e}")
         return None
-
-
-def get_member_by_name(member_list: list, name: str):
-    # Get the first Member object from the list with the given name.5
-    for member in member_list:
-        if member['name'] == name:
-            logger.warning("FOUND")
-            m = Member(name)
-            m.notify = member['notify']
-            logger.warning(m.notify)
-            return m
-    return None  # Return None if no member with the specified name is found
-
-
-def get_notify_by_member_name(member_list: list, name: str):
-    # Get the first Member object from the list with the given name.5
-    for member in member_list:
-        if member['name'] == name:
-            return member['notify']
-    return None  # Return None if no member with the specified name is found
