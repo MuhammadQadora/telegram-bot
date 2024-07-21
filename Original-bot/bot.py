@@ -103,8 +103,7 @@ class Bot:
                 "Ask a question", callback_data="answer_question"
             )
             markup.add(gpt_4, yolov5, gpt_one_question, text_to_image)
-            self.bot.send_message(
-                msg.chat.id, "Available Options", reply_markup=markup)
+            self.bot.send_message(msg.chat.id, "Available Options", reply_markup=markup)
 
     def photo_handler(self):
         @self.bot.message_handler(content_types=["photo"])
@@ -134,8 +133,7 @@ class Bot:
                     client.upload_fileobj(
                         memory,
                         bucket_name,
-                        f"OriginalBot/received/{
-                            os.path.basename(file_info.file_path)}",
+                        f"OriginalBot/received/{os.path.basename(file_info.file_path)}",
                     )
                 except botocore.exceptions.ClientError as e:
                     logger.info(e)
@@ -152,8 +150,7 @@ class Bot:
                             }
                         ),
                     )
-                    self.bot.send_message(
-                        msg.chat.id, "Sent Image for processing.....")
+                    self.bot.send_message(msg.chat.id, "Sent Image for processing.....")
                     logger.info(response)
                 except botocore.exceptions.ClientError as e:
                     logger.error(e)
@@ -238,8 +235,7 @@ class Bot:
                     )
 
                 logger.error(notify)
-                update_member_notify(
-                    name=clk.message.chat.id, notify_updates=notify)
+                update_member_notify(name=clk.message.chat.id, notify_updates=notify)
 
     def text_handler(self):
         @self.bot.message_handler(content_types=["text"])
@@ -254,8 +250,7 @@ class Bot:
                 logger.info(f"Chat with GPT-4 Activated")
                 if msg.text == "/quit":
                     notify[Notify.GPT4] = False
-                    update_member_notify(
-                        name=msg.chat.id, notify_updates=notify)
+                    update_member_notify(name=msg.chat.id, notify_updates=notify)
                     self.bot.send_message(
                         msg.chat.id,
                         "Chat With GPT-4 Deactivated",
@@ -280,15 +275,13 @@ class Bot:
                 )
                 self.bot.send_message(msg.chat.id, f"{assistant_response}")
                 feed_to_dynamo_update = (
-                    dynamo_obj.convert_regular_dictionary_to_dynamodb(
-                        chat_history)
+                    dynamo_obj.convert_regular_dictionary_to_dynamodb(chat_history)
                 )
                 Item = dynamo_obj.template(msg.chat.id, feed_to_dynamo_update)
                 dynamo_obj.put_item(Item)
                 logger.info("Chat with GPT-4 Deactivated")
             elif notify.get(Notify.YOLO):
-                self.bot.send_message(
-                    msg.chat.id, "You must upload a photo not text")
+                self.bot.send_message(msg.chat.id, "You must upload a photo not text")
             elif notify.get(Notify.QUESTION):
                 logger.info("Ask a question activated")
                 user_role = [{"role": "user", "content": f"{msg.text}"}]
