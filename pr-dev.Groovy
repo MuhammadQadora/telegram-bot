@@ -3,6 +3,7 @@ pipeline {
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '2'))
     ansiColor('xterm')
+    skipDefaultCheckout()
   }
   agent {
     kubernetes {}

@@ -3,6 +3,7 @@ pipeline {
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '2'))
     ansiColor('xterm')
+    skipDefaultCheckout()
   }
   agent {
     kubernetes {
@@ -118,7 +119,7 @@ spec:
           if [ "$check" = "nothing to commit, working tree clean" ];then echo yes && exit 0;fi
           git checkout main
           git add prod-version.txt
-          git commit -m "Commit by Jenkins: updated tag to $version"
+          git commit -m "Commit by Jenkins: updated tag to $v"
           git push origin main
           '''
           }
