@@ -72,7 +72,7 @@ class Bot:
         def start(msg):
             self.bot.send_message(
                 msg.chat.id,
-                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot!\n,To see what this Bot can do use /options .",
+                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot!,\nTo see what this Bot can do use /options .",
             )
             if not is_member_in_list_by_name(msg.chat.id):
                 add_member(msg.chat.id)
@@ -83,7 +83,6 @@ class Bot:
         @self.bot.message_handler(commands=["options"])
         def help(msg):
             if is_member_in_list_by_name(msg.chat.id):
-                # member = get_member_by_name(self.list_members, msg.chat.id)
                 member = get_member_from_dynamo(name=msg.chat.id)
                 for notification in member.notify:
                     member.notify[notification] = False
@@ -187,7 +186,7 @@ class Bot:
             else:
                 self.bot.send_message(
                     msg.chat.id,
-                    "It seems you tried to upload a photo, if you want to detect objects got to /options\nand choose object detection",
+                    "It seems you tried to upload a photo, if you want to detect objects got to /options\nand choose [object detection]",
                 )
             update_member_notify(name=msg.chat.id, notify_updates=notify)
 
