@@ -3,7 +3,6 @@ pipeline {
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '2'))
     ansiColor('xterm')
-    skipDefaultCheckout()
   }
   agent {
     kubernetes {
@@ -76,7 +75,7 @@ spec:
       steps {
         script {
           echo "=====================================${STAGE_NAME}====================================="
-          checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
+          git branch: 'main', credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot'
           echo 'Checked out from GitHub...'
         }
       }
