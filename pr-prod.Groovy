@@ -27,7 +27,7 @@ pipeline {
       shouldNotFlatten: false,
 
       regexpFilterText: '$ref $action',
-      regexpFilterExpression: 'main opened'
+      regexpFilterExpression: 'main (opened|synchronize)'
     )
   }
   stages {
