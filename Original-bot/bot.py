@@ -133,8 +133,7 @@ class Bot:
                     client.upload_fileobj(
                         memory,
                         bucket_name,
-                        f"OriginalBot/received/{
-                            os.path.basename(file_info.file_path)}",
+                        f"OriginalBot/received/{os.path.basename(file_info.file_path)}"
                     )
                 except botocore.exceptions.ClientError as e:
                     logger.info(e)
@@ -147,7 +146,7 @@ class Bot:
                             {
                                 "chat_id": msg.chat.id,
                                 "msg_id": msg.message_id,
-                                "path": f"OriginalBot/received/{os.path.basename(file_info.file_path)}",
+                                "path": f"OriginalBot/received/{os.path.basename(file_info.file_path)}"
                             }
                         ),
                     )
