@@ -134,7 +134,8 @@ class Bot:
                     client.upload_fileobj(
                         memory,
                         bucket_name,
-                        f"OriginalBot/received/{os.path.basename(file_info.file_path)}",
+                        f"OriginalBot/received/{
+                            os.path.basename(file_info.file_path)}",
                     )
                 except botocore.exceptions.ClientError as e:
                     logger.info(e)
