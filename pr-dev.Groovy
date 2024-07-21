@@ -47,18 +47,18 @@ pipeline {
         echo "some tests ran and passed ...."
       }
     }
-    stage('enforce PEP8 with Black'){
-      steps{
-          echo "=====================================${STAGE_NAME}====================================="
-          sh '''
-          #!/bin/bash
-          python3 -m venv private
-          . private/bin/activate
-          pip install --no-cache-dir black; python3 -m black .
-          deactivate
-          '''
-      }
-    }
+    // stage('enforce PEP8 with Black'){
+    //   steps{
+    //       echo "=====================================${STAGE_NAME}====================================="
+    //       sh '''
+    //       #!/bin/bash
+    //       python3 -m venv private
+    //       . private/bin/activate
+    //       pip install --no-cache-dir black; python3 -m black .
+    //       deactivate
+    //       '''
+    //   }
+    // }
     stage('scan with sonarqube') {
       steps {
         withSonarQubeEnv(credentialsId: 'sonar', installationName: 'sonar') {
