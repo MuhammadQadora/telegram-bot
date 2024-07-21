@@ -72,7 +72,7 @@ class Bot:
         def start(msg):
             self.bot.send_message(
                 msg.chat.id,
-                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
+                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot!,\nTo see what this Bot can do use /option .",
             )
             if not is_member_in_list_by_name(msg.chat.id):
                 add_member(msg.chat.id)
@@ -80,7 +80,7 @@ class Bot:
     # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
     # then return answer to the user
     def getHelp(self):
-        @self.bot.message_handler(commands=["help"])
+        @self.bot.message_handler(commands=["option"])
         def help(msg):
             if is_member_in_list_by_name(msg.chat.id):
                 # member = get_member_by_name(self.list_members, msg.chat.id)
