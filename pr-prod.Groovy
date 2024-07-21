@@ -12,7 +12,8 @@ pipeline {
       genericVariables: [
         [key: 'ref', value: '$.pull_request.base.ref'],
         [key: 'action', value: '$.action'],
-        [key: 'sha', value: '$.pull_request.head.sha']
+        [key: 'sha', value: '$.pull_request.head.sha'],
+        [key: 'fbranch', value: '$.pull_request.head.ref'],
       ],
       causeString: 'Triggered on $ref',
       token: '',
@@ -35,8 +36,7 @@ pipeline {
         script {
           echo "=====================================${STAGE_NAME}====================================="
           updateStatus('pending','tests started')
-          checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
-          updateStatus('pending','tests started')
+          checkout scmGit(branches: [[name: "*/${env.fbranch}"]], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])          updateStatus('pending','tests started')
           echo 'Checked out from GitHub...'
         }
       }
