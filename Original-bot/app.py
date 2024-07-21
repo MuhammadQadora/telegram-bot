@@ -36,11 +36,7 @@ def sns_notification():
         data = json.loads(data["Message"])
         if data["Status_Code"] == 200:
             table_resource = dynamodb.Table(table)
-            response = table_resource.get_item(
-                Key={
-                    "_id": data["job_id"]
-                }
-            )
+            response = table_resource.get_item(Key={"_id": data["job_id"]})
             prediction = json.loads(response["Item"]["text"])
             util = Util(prediction)
             result = util.object_count()

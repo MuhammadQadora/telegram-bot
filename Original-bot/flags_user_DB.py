@@ -5,7 +5,7 @@ import boto3
 import botocore.exceptions
 from decimal import Decimal
 
-dynamodb = boto3.resource('dynamodb', region_name=os.environ["REGION_NAME"])
+dynamodb = boto3.resource("dynamodb", region_name=os.environ["REGION_NAME"])
 table = dynamodb.Table(os.environ["FLAGS_TABLE_NAME"])
 
 
@@ -34,13 +34,13 @@ class Member:
 
 def pull_data():
     response = table.scan()
-    data = response['Items']
-    while 'LastEvaluatedKey' in response:
-        response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
-        data.extend(response['Items'])
+    data = response["Items"]
+    while "LastEvaluatedKey" in response:
+        response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
+        data.extend(response["Items"])
     # Convert string keys back to Notify enum keys
     for item in data:
-        item['notify'] = convert_dict_keys_to_enum(item['notify'])
+        item["notify"] = convert_dict_keys_to_enum(item["notify"])
     return data
 
 
@@ -50,12 +50,10 @@ def update_member_notify(name, notify_updates):
         notify_updates_str = convert_enum_keys_to_str(notify_updates)
 
         response = table.update_item(
-            Key={'_id': Decimal(name)},  # Assuming _id is the primary key
+            Key={"_id": Decimal(name)},  # Assuming _id is the primary key
             UpdateExpression="SET notify = :notify_updates",
-            ExpressionAttributeValues={
-                ':notify_updates': notify_updates_str
-            },
-            ReturnValues="UPDATED_NEW"
+            ExpressionAttributeValues={":notify_updates": notify_updates_str},
+            ReturnValues="UPDATED_NEW",
         )
         logger.info(f"Update succeeded: {response}")
     except Exception as e:
@@ -65,7 +63,7 @@ def update_member_notify(name, notify_updates):
 def is_member_in_list_by_name(name: str):
     bot_members = pull_data()
     for member in bot_members:
-        if member['name'] == name:
+        if member["name"] == name:
             return True
     return False
 
@@ -74,22 +72,21 @@ def add_member(name: str):
     if not is_member_in_list_by_name(name):
         new_member = Member(name)
         item = {
-            '_id': Decimal(new_member.name),
-            'name': new_member.name,
+            "_id": Decimal(new_member.name),
+            "name": new_member.name,
             # Convert enum keys to string for DynamoDB
-            'notify': convert_enum_keys_to_str(new_member.notify)
+            "notify": convert_enum_keys_to_str(new_member.notify),
         }
         try:
             table.put_item(
                 Item=item,
-                ConditionExpression='attribute_not_exists(#name)',
-                ExpressionAttributeNames={'#name': 'name'}
+                ConditionExpression="attribute_not_exists(#name)",
+                ExpressionAttributeNames={"#name": "name"},
             )
             logger.info(f"Added member [{item['name']}] to DynamoDB table.")
         except botocore.exceptions.ClientError as e:
-            if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-                logger.error(
-                    f"Item with name [{item['name']}] already exists.")
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                logger.error(f"Item with name [{item['name']}] already exists.")
             else:
                 logger.error(f"ClientError: {e.response['Error']['Message']}")
         except Exception as e:
@@ -106,11 +103,11 @@ def convert_enum_keys_to_str(enum_dict):
 
 def get_member_from_dynamo(name: str):
     try:
-        response = table.get_item(Key={'_id': Decimal(name)})
-        if 'Item' in response:
-            item = response['Item']
-            member = Member(item['name'])
-            member.notify = convert_dict_keys_to_enum(item['notify'])
+        response = table.get_item(Key={"_id": Decimal(name)})
+        if "Item" in response:
+            item = response["Item"]
+            member = Member(item["name"])
+            member.notify = convert_dict_keys_to_enum(item["notify"])
             return member
         else:
             logger.warning(f"Member with name [{name}] not found.")
