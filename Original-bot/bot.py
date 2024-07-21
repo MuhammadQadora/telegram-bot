@@ -72,7 +72,7 @@ class Bot:
         def start(msg):
             self.bot.send_message(
                 msg.chat.id,
-                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot!\n,To see what this Bot can do use /option .",
+                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot!\n,To see what this Bot can do use /options .",
             )
             if not is_member_in_list_by_name(msg.chat.id):
                 add_member(msg.chat.id)
@@ -80,7 +80,7 @@ class Bot:
     # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
     # then return answer to the user
     def getHelp(self):
-        @self.bot.message_handler(commands=["option"])
+        @self.bot.message_handler(commands=["options"])
         def help(msg):
             if is_member_in_list_by_name(msg.chat.id):
                 # member = get_member_by_name(self.list_members, msg.chat.id)
@@ -166,7 +166,7 @@ class Bot:
             ):
                 self.bot.send_message(
                     msg.chat.id,
-                    "For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /help .",
+                    "For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /options .",
                 )
                 notify[Notify.GPT4] = False
             elif (
@@ -176,7 +176,7 @@ class Bot:
             ):
                 self.bot.send_message(
                     msg.chat.id,
-                    "For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /help .",
+                    "For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /options .",
                 )
                 notify[Notify.QUESTION] = False
             elif notify[Notify.TEXT_TO_IMAGE] == True:
@@ -187,9 +187,9 @@ class Bot:
             else:
                 self.bot.send_message(
                     msg.chat.id,
-                    "It seems you tried to upload a photo, if you want to detect objects got to /help\nand choose object detection",
+                    "It seems you tried to upload a photo, if you want to detect objects got to /options\nand choose object detection",
                 )
-            update_member_notify(name=msg.chat.id, notify_updates=str(n))
+            update_member_notify(name=msg.chat.id, notify_updates=notify)
 
     def callback(self):
         @self.bot.callback_query_handler(func=lambda call: True)
@@ -306,5 +306,5 @@ class Bot:
                 notify[Notify.TEXT_TO_IMAGE] = False
                 logger.info("Text to image deactivated")
             else:
-                self.bot.send_message(msg.chat.id, "Please refer to /help.")
+                self.bot.send_message(msg.chat.id, "Please refer to /options.")
             update_member_notify(name=msg.chat.id, notify_updates=notify)
