@@ -72,7 +72,7 @@ class Bot:
         def start(msg):
             self.bot.send_message(
                 msg.chat.id,
-                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot! Hi class,To see what this Bot can do use /help .",
+                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot!\n,To see what this Bot can do use /option .",
             )
             if not is_member_in_list_by_name(msg.chat.id):
                 add_member(msg.chat.id)
@@ -80,7 +80,7 @@ class Bot:
     # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
     # then return answer to the user
     def getHelp(self):
-        @self.bot.message_handler(commands=["help"])
+        @self.bot.message_handler(commands=["option"])
         def help(msg):
             if is_member_in_list_by_name(msg.chat.id):
                 # member = get_member_by_name(self.list_members, msg.chat.id)
@@ -158,32 +158,32 @@ class Bot:
                 except botocore.exceptions.ClientError as e:
                     logger.error(e)
                     return False
-                n[Notify.YOLO] = False
+                notify[Notify.YOLO] = False
             elif (
-                n[Notify.GPT4] == True
-                and n[Notify.YOLO] == False
-                and n[Notify] == False
+                notify[Notify.GPT4] == True
+                and notify[Notify.YOLO] == False
+                and notify[Notify] == False
             ):
                 self.bot.send_message(
                     msg.chat.id,
                     "For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /help .",
                 )
-                n[Notify.GPT4] = False
+                notify[Notify.GPT4] = False
             elif (
-                n[Notify.QUESTION] == True
-                and n[Notify.YOLO] == False
-                and n[Notify.GPT4] == False
+                notify[Notify.QUESTION] == True
+                and notify[Notify.YOLO] == False
+                and notify[Notify.GPT4] == False
             ):
                 self.bot.send_message(
                     msg.chat.id,
                     "For now I can only handle messages not photos,\nif you want to detect objects in photos refer to /help .",
                 )
-                n[Notify.QUESTION] = False
-            elif n[Notify.TEXT_TO_IMAGE] == True:
+                notify[Notify.QUESTION] = False
+            elif notify[Notify.TEXT_TO_IMAGE] == True:
                 self.bot.send_message(
                     msg.chat.id, "Its text to Image, not Image to text !!"
                 )
-                n[Notify.TEXT_TO_IMAGE] = False
+                notify[Notify.TEXT_TO_IMAGE] = False
             else:
                 self.bot.send_message(
                     msg.chat.id,
