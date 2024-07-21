@@ -3,7 +3,7 @@ pipeline {
     timestamps()
     buildDiscarder(logRotator(numToKeepStr: '2'))
     ansiColor('xterm')
-     skipDefaultCheckout()
+    skipDefaultCheckout()
   }
   agent {
     kubernetes {
@@ -69,7 +69,6 @@ spec:
           echo "=====================================${STAGE_NAME}====================================="
           echo "Build Number: ${BUILD_NUMBER}"
           echo "Pusher: ${env.pusher}"
-          echo "Region: ${params.region}"
         }
       }
     }
@@ -77,8 +76,7 @@ spec:
       steps {
         script {
           echo "=====================================${STAGE_NAME}====================================="
-          checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
-          echo 'Checked out from GitHub...'
+          git branch: 'dev', credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot'
         }
       }
     }
