@@ -36,7 +36,7 @@ pipeline {
         script {
           echo "=====================================${STAGE_NAME}====================================="
           updateStatus('pending','tests started')
-          checkout scmGit(branches: [[name: '*/${env.fbranch}']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
+          checkout scmGit(branches: [[name: "*/${env.fbranch}"]], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/MuhammadQadora/telegram-bot']])
           updateStatus('pending','tests started')
           echo 'Checked out from GitHub...'
         }
