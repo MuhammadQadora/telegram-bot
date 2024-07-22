@@ -16,7 +16,7 @@ class AI:
     def gpt(self, user_message):
         try:
             response = self.client.chat.completions.create(
-                messages=user_message, model="gpt-4"
+                messages=user_message, model="gpt-4o"
             )
             assistant_response = response.choices[0].message.content
             return assistant_response
