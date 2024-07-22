@@ -90,7 +90,7 @@ class Bot:
                 add_member(msg.chat.id)
             markup = telebot.types.InlineKeyboardMarkup(row_width=2)
             gpt_4 = telebot.types.InlineKeyboardButton(
-                "Chat with gpt-4", callback_data="answer_gpt4"
+                "Chat with GPT-4o", callback_data="answer_gpt4"
             )
             yolov5 = telebot.types.InlineKeyboardButton(
                 "Object Detection", callback_data="answer_yolov5"
@@ -205,11 +205,11 @@ class Bot:
                     notify[Notify.TEXT_TO_IMAGE] = False
                     self.bot.send_message(
                         clk.message.chat.id,
-                        "You are now chatting with gpt-4,to quit use /quit",
+                        "You are now chatting with GPT-4o,\nTo 'Quit' use /quit",
                     )
                     self.bot.send_message(
                         clk.message.chat.id,
-                        "Chat With GPT-4 Activated",
+                        "Chat With GPT-4o Activated",
                     )
                 elif clk.data == "answer_yolov5":
                     notify[Notify.GPT4] = False
@@ -250,14 +250,14 @@ class Bot:
             notify = member.notify if member else {}
             logger.info(notify)
             if notify.get(Notify.GPT4):
-                logger.info(f"Chat with GPT-4 Activated")
+                logger.info(f"Chat with GPT-4o Activated")
                 if msg.text == "/quit":
                     notify[Notify.GPT4] = False
                     update_member_notify(
                         name=msg.chat.id, notify_updates=notify)
                     self.bot.send_message(
                         msg.chat.id,
-                        "Chat With GPT-4 Deactivated",
+                        "Chat With GPT-4o Deactivated",
                     )
                     return
                 dynamo_obj = dynamodbAPI()
@@ -284,7 +284,7 @@ class Bot:
                 )
                 Item = dynamo_obj.template(msg.chat.id, feed_to_dynamo_update)
                 dynamo_obj.put_item(Item)
-                logger.info("Chat with GPT-4 Deactivated")
+                logger.info("Chat with GPT-4o Deactivated")
             elif notify.get(Notify.YOLO):
                 self.bot.send_message(
                     msg.chat.id, "You must upload a photo not text")
