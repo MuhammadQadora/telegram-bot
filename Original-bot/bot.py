@@ -85,12 +85,39 @@ class Bot:
     def startCommand(self):
         @self.bot.message_handler(commands=["start"])
         def start(msg):
-            self.bot.send_message(
-                msg.chat.id,
-                f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot,\nTo see what this Bot can do use /options .",
-            )
-            if not is_member_in_list_by_name(msg.chat.id):
-                add_member(msg.chat.id)
+            gif_path = os.path.join(os.path.dirname(__file__), 'GIF', 'loading.gif')
+            try:
+                with open(gif_path, "rb") as gif_file:
+                    # Send the GIF animation and save the message ID
+                    animation_msg = self.bot.send_animation(
+                        msg.chat.id,
+                        gif_file
+                    )
+                
+                # Simulate processing
+                time.sleep(5)  # Replace with actual processing logic
+                
+                # Send the final response
+                self.bot.send_message(
+                    chat_id=msg.chat.id,
+                    text=f"This is a placeholder for the actual response."
+                )
+                
+                # Optionally, delete the animation message if no longer needed
+                self.bot.delete_message(
+                    chat_id=msg.chat.id,
+                    message_id=animation_msg.message_id
+                )
+            except Exception as e:
+                print(f"Failed to send GIF or response message: {e}")
+                logger.error(f"Failed to send GIF or response message: {e}")
+            # self.bot.send_message(
+            #     msg.chat.id,
+            #     f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot,\nTo see what this Bot can do use /options .",
+            # )
+            # if not is_member_in_list_by_name(msg.chat.id):
+            #     add_member(msg.chat.id)
+
 
     # This function responds to add '/quit' button
     def addReplayKeyboard(self, chat_id):
