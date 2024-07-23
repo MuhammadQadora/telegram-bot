@@ -5,8 +5,8 @@ import boto3
 import botocore.exceptions
 from decimal import Decimal
 
-dynamodb = boto3.resource("dynamodb", region_name=os.environ["REGION_NAME"])
-table = dynamodb.Table(os.environ["FLAGS_TABLE_NAME"])
+dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+table = dynamodb.Table("flags-table-terraform-dev")
 
 
 class Notify(Enum):

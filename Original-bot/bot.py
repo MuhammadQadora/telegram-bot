@@ -12,15 +12,30 @@ import json
 from dynamodbAPI import dynamodbAPI
 from flags_user_DB import *
 
+# ##################
+# token = os.environ["TELEGRAM_TOKEN"]
+# url = os.environ["TELEGRAM_APP_URL"]
+# bucket_name = secret_keys["BUCKET_NAME"]
+# queue_url = os.environ["SQS_URL"]
+# region_name = os.environ["REGION_NAME"]
+# sns_topic_arn = os.environ["SNS_ARN"]
+# table = os.environ["DYNAMO_TBL"]
+# server_endpoint = os.environ["SERVER_ENDPOINT"]
+# #######################
+
+# sqs_client = boto3.client("sqs", region_name=region_name)
+
+# ########################
+
 ##################
-token = os.environ["TELEGRAM_TOKEN"]
-url = os.environ["TELEGRAM_APP_URL"]
+token = "7164236172:AAEmrU7Ie8uq8K2Duhm-wYjtqj_XfcaKHQ0"
+url = "https://48fa-37-122-152-206.ngrok-free.app"
 bucket_name = secret_keys["BUCKET_NAME"]
-queue_url = os.environ["SQS_URL"]
-region_name = os.environ["REGION_NAME"]
-sns_topic_arn = os.environ["SNS_ARN"]
-table = os.environ["DYNAMO_TBL"]
-server_endpoint = os.environ["SERVER_ENDPOINT"]
+queue_url = "telegrambot-yolo5-mf"
+region_name = "us-east-1"
+sns_topic_arn = "arn:aws:sns:us-east-1:933060838752:telegrambot-sns-mf"
+table = "telegrambot-mf"
+server_endpoint = "https://48fa-37-122-152-206.ngrok-free.app/sns_update"
 #######################
 
 sqs_client = boto3.client("sqs", region_name=region_name)
@@ -77,8 +92,23 @@ class Bot:
             if not is_member_in_list_by_name(msg.chat.id):
                 add_member(msg.chat.id)
 
-    # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
-    # then return answer to the user
+    # This function responds to add '/quit' button
+    def addReplayKeyboard(self, chat_id):
+        keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+        item_options = telebot.types.KeyboardButton('/quit')
+        keyboard.add(item_options)
+
+        self.bot.send_message(
+            chat_id,
+            "Chat With GPT-4o Activated", reply_markup=keyboard)
+        return keyboard
+
+    # This function responds to remove '/quit' button
+    def removeReplyKeyboard(self, chat_id):
+        markup = telebot.types.ReplyKeyboardRemove()
+        self.bot.send_message(chat_id, "Chat With GPT-4o Deactivated", reply_markup=markup)
+
+    # This function responds with a greeting when the user uses /options
     def getHelp(self):
         @self.bot.message_handler(commands=["options"])
         def help(msg):
@@ -105,6 +135,8 @@ class Bot:
             self.bot.send_message(
                 msg.chat.id, "Available Options", reply_markup=markup)
 
+    # This function receives photos, uploads them to s3, posts them to Yolov5 for object detection
+    # then return answer to the user
     def photo_handler(self):
         @self.bot.message_handler(content_types=["photo"])
         def photo(msg):
@@ -190,6 +222,7 @@ class Bot:
                 )
             update_member_notify(name=msg.chat.id, notify_updates=notify)
 
+    # This function responds with menu of options
     def callback(self):
         @self.bot.callback_query_handler(func=lambda call: True)
         def back(clk):
@@ -203,14 +236,13 @@ class Bot:
                     notify[Notify.YOLO] = False
                     notify[Notify.QUESTION] = False
                     notify[Notify.TEXT_TO_IMAGE] = False
+
                     self.bot.send_message(
                         clk.message.chat.id,
-                        "You are now chatting with GPT-4o,\nTo 'Quit' use /quit",
-                    )
-                    self.bot.send_message(
-                        clk.message.chat.id,
-                        "Chat With GPT-4o Activated",
-                    )
+                        "You are now chatting with GPT-4o,\nTo 'Quit' use /quit")
+
+                    self.addReplayKeyboard(clk.message.chat.id)
+
                 elif clk.data == "answer_yolov5":
                     notify[Notify.GPT4] = False
                     notify[Notify.YOLO] = True
@@ -240,6 +272,7 @@ class Bot:
                 update_member_notify(
                     name=clk.message.chat.id, notify_updates=notify)
 
+    # This function responds with a greeting when the user send text
     def text_handler(self):
         @self.bot.message_handler(content_types=["text"])
         def txt(msg):
@@ -255,10 +288,8 @@ class Bot:
                     notify[Notify.GPT4] = False
                     update_member_notify(
                         name=msg.chat.id, notify_updates=notify)
-                    self.bot.send_message(
-                        msg.chat.id,
-                        "Chat With GPT-4o Deactivated",
-                    )
+                    
+                    self.removeReplyKeyboard(msg.chat.id)
                     return
                 dynamo_obj = dynamodbAPI()
                 # Get the chat log
@@ -277,7 +308,7 @@ class Bot:
                 chat_history.append(
                     {"role": "assistant", "content": f"{assistant_response}"}
                 )
-                self.bot.send_message(msg.chat.id, f"{assistant_response}")
+                self.bot.send_message(msg.chat.id, f"{assistant_response}", reply_markup=self.addReplayKeyboard(msg.chat.id))
                 feed_to_dynamo_update = (
                     dynamo_obj.convert_regular_dictionary_to_dynamodb(
                         chat_history)
