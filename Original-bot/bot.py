@@ -65,6 +65,26 @@ class Util:
                 result += f"{key}: {val}\n"
             return result
 
+async def send_animation(bot, chat_id, processing_function):
+    gif_path = os.path.join(os.path.dirname(__file__), 'GIF', 'loading.gif')
+    try:
+        with open(gif_path, "rb") as gif_file:
+            # Send the GIF animation and save the message ID
+            animation_msg = await bot.send_animation(chat_id, gif_file)
+
+        # Perform the processing
+        result = await processing_function()
+
+        # Send the final response
+        await bot.send_message(chat_id=chat_id, text=result)
+
+        # Optionally, delete the animation message if no longer needed
+        await bot.delete_message(chat_id=chat_id, message_id=animation_msg.message_id)
+
+    except Exception as e:
+        print(f"Failed to send GIF or response message: {e}")
+        logger.error(f"Failed to send GIF or response message: {e}")
+
 
 class Bot:
     # Initiate connection with telegram
@@ -302,7 +322,7 @@ class Bot:
     # This function responds with a greeting when the user send text
     def text_handler(self):
         @self.bot.message_handler(content_types=["text"])
-        def txt(msg):
+        async def txt(msg):
             # member = get_member_by_name(self.list_members, msg.chat.id)
             member = get_member_from_dynamo(name=msg.chat.id)
 
