@@ -70,6 +70,7 @@ class Bot:
     def startCommand(self):
         @self.bot.message_handler(commands=["start"])
         def start(msg):
+            self.bot.send_message(msg.chat.id,"DEMO")
             self.bot.send_message(
                 msg.chat.id,
                 f"Hi there {msg.from_user.first_name}.\nWelcome to my amazing bot,\nTo see what this Bot can do use /options .",
